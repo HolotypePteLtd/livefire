@@ -20,6 +20,7 @@ ${agentDocs}`;
     <meta name="description" content={description} />
     <link rel="canonical" href={new URL('/', Astro.site)} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" href="/fonts/barlow-condensed-bold.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
@@ -35,6 +36,11 @@ ${agentDocs}`;
 
     <main id="main">
       <section class="hero" aria-labelledby="intro">
+        <div class="hero-art" aria-hidden="true">
+          <span class="facet facet-left"></span>
+          <span class="facet facet-right"></span>
+          <span class="facet facet-bottom"></span>
+        </div>
         <div class="hero-layout wrap">
           <div>
             <h1 id="intro">Instant real-time <span>multiplayer</span></h1>
@@ -46,7 +52,7 @@ ${agentDocs}`;
 
           <div class="snippets">
             <div class="snippet">
-              <div class="snippet-box">
+              <div class="snippet-box vector-panel">
                 <pre aria-label="TypeScript client example" tabindex="0"><code id="quickstart-code">{quickstart}</code></pre>
                 <button type="button" class="copy-button" data-copy="quickstart-code" aria-label="Copy code" title="Copy code" hidden>
                   <span aria-hidden="true"></span>
@@ -57,7 +63,7 @@ ${agentDocs}`;
 
             <section class="snippet" aria-labelledby="coding-agents">
               <h2 id="coding-agents">or copy prompt for your coding agent</h2>
-              <div class="snippet-box">
+              <div class="snippet-box vector-panel">
                 <p class="agent-prompt" id="agent-prompt">{agentPrompt}</p>
                 <button type="button" class="copy-button" data-copy="agent-prompt" aria-label="Copy prompt" title="Copy prompt" hidden>
                   <span aria-hidden="true"></span>
@@ -70,7 +76,7 @@ ${agentDocs}`;
       </section>
 
       <div class="demo-section wrap">
-        <figure class="room-demo" aria-labelledby="demo-title">
+        <figure class="room-demo vector-panel" aria-labelledby="demo-title">
           <figcaption>
             <h2 id="demo-title">Two players, one room</h2>
             <p>Drag in your view, or click it and use the arrow keys. Watch your blue player move in the red bot’s view too. The room server runs in this tab.</p>

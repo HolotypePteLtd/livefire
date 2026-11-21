@@ -47,8 +47,10 @@ import '../../styles/world.css';
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
       renderer.setSize(innerWidth, innerHeight, false);
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color('#0b0620');
-      scene.fog = new THREE.Fog('#0b0620', 40, 90);
+      const background = '#090d0b';
+      const boundaryColor = 0xbffa4e;
+      scene.background = new THREE.Color(background);
+      scene.fog = new THREE.Fog(background, 40, 90);
       const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
       camera.position.set(0, 26, 30);
       camera.lookAt(0, 0, 0);
@@ -56,11 +58,11 @@ import '../../styles/world.css';
       const halfExtent = 18; // mirrors the authority's default; the baseline carries the real value
       const ground = new THREE.Mesh(
         new THREE.PlaneGeometry(halfExtent * 2, halfExtent * 2),
-        new THREE.MeshStandardMaterial({ color: '#150b30', roughness: 1 }),
+        new THREE.MeshStandardMaterial({ color: '#14251a', roughness: 1 }),
       );
       ground.rotation.x = -Math.PI / 2;
       scene.add(ground);
-      scene.add(new THREE.GridHelper(halfExtent * 2, 18, 0x39ff14, 0x2e1a54));
+      scene.add(new THREE.GridHelper(halfExtent * 2, 18, boundaryColor, 0x2d503a));
       const bounds = new THREE.LineLoop(
         new THREE.BufferGeometry().setFromPoints([
           new THREE.Vector3(-halfExtent, 0.05, -halfExtent),
@@ -68,10 +70,10 @@ import '../../styles/world.css';
           new THREE.Vector3(halfExtent, 0.05, halfExtent),
           new THREE.Vector3(-halfExtent, 0.05, halfExtent),
         ]),
-        new THREE.LineBasicMaterial({ color: 0x39ff14 }),
+        new THREE.LineBasicMaterial({ color: boundaryColor }),
       );
       scene.add(bounds);
-      scene.add(new THREE.HemisphereLight(0xbfaef0, 0x1a0f38, 1.4));
+      scene.add(new THREE.HemisphereLight(0xe0f2da, 0x14251a, 1.4));
       const sun = new THREE.DirectionalLight(0xffffff, 1.2);
       sun.position.set(8, 20, 10);
       scene.add(sun);
@@ -104,7 +106,7 @@ import '../../styles/world.css';
         const c = document.createElement('canvas');
         c.width = 256; c.height = 64;
         const g = c.getContext('2d');
-        g.fillStyle = 'rgba(11,6,32,0.75)';
+        g.fillStyle = 'rgba(9,13,11,0.8)';
         g.fillRect(0, 0, 256, 64);
         g.font = '600 34px system-ui, sans-serif';
         g.fillStyle = '#fff';
