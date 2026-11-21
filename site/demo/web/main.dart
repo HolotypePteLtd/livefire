@@ -20,9 +20,9 @@ Future<void> main() async {
     <div class="demo-log" aria-live="polite"></div>
     <div class="demo-controls">
       <input class="demo-input" type="text" maxlength="280" aria-label="Chat message"
-             placeholder="Say something as the third player…">
+             placeholder="Message the room">
       <button class="demo-say" type="button">Send</button>
-      <button class="demo-plus" type="button">+1 my counter</button>
+      <button class="demo-plus" type="button">Add a point</button>
     </div>
   '''
       .toJS;
@@ -34,11 +34,6 @@ Future<void> main() async {
   final input = root.querySelector('.demo-input') as web.HTMLInputElement;
   final say = root.querySelector('.demo-say') as web.HTMLButtonElement;
   final plusOne = root.querySelector('.demo-plus') as web.HTMLButtonElement;
-
-  var players = 0;
-  void renderStatus() =>
-      status.textContent = 'room live · $players player(s) · engine in this tab';
-  renderStatus();
 
   void addLine(String line, {String? kind}) {
     final row = web.document.createElement('div');
@@ -55,9 +50,7 @@ Future<void> main() async {
   room.events.listen((event) {
     switch (event) {
       case PlayerJoined():
-        players++;
-        renderStatus();
-        addLine('${event.name} joined the room', kind: 'join');
+        addLine('${event.name} joined', kind: 'join');
       case ChatLine():
         addLine('${event.from}: ${event.text}');
       case CounterState():
@@ -66,8 +59,7 @@ Future<void> main() async {
             '<span>${entry.key} <b>${entry.value}</b></span>',
         ].join();
         countsRow.innerHTML = chips.toJS;
-        status.textContent =
-            'room live · tick ${event.tick} · engine in this tab';
+        status.textContent = 'Room tick ${event.tick}';
       case DemoNote():
         addLine(event.text, kind: 'note');
     }

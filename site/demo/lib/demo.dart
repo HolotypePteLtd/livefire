@@ -37,7 +37,7 @@ class CounterState extends DemoEvent {
   final int tick;
 }
 
-/// Lifecycle note (room started, visitor joined, room closed…).
+/// A status message from the demo room.
 class DemoNote extends DemoEvent {
   const DemoNote(this.text);
   final String text;
@@ -131,23 +131,14 @@ class DemoRoom {
   final _names = <String, String>{}; // peer id -> display name
   RoomClient<RoomSnapshot>? _observer; // sees every chat and snapshot
   Timer? _script;
-  int _beat = 0, _chatCursor = 0, _seenChat = 0;
+  int _beat = 0, _seenChat = 0;
   bool _closed = false;
-
-  static const _scriptedChats = <(String, String)>[
-    ('Alice', 'hello from Alice'),
-    ('Bob', 'Bob checking in'),
-    ('Alice', 'one button press, one increment — the server counts'),
-    ('Bob', 'my client only sends commands; the room decides the count'),
-    ('Alice', 'you can play too — say something or press +1'),
-    ('Bob', 'everything you see here replicates like on a real server'),
-  ];
 
   /// Starts the engine and the scripted players.
   Future<void> start() async {
     if (_closed) return;
     hub.start();
-    _emit(const DemoNote('room engine started in this tab'));
+    _emit(const DemoNote('Room opened'));
     await _joinScripted('Alice');
     await _joinScripted('Bob');
     _script = Timer.periodic(scriptInterval, (_) => _beatStep());
@@ -157,9 +148,7 @@ class DemoRoom {
   Future<RoomClient<RoomSnapshot>> _ensureVisitor() async {
     final existing = _clients['You'];
     if (existing != null) return existing;
-    final you = await _joinScripted('You');
-    _emit(const DemoNote('you joined as a third player'));
-    return you;
+    return _joinScripted('You');
   }
 
   /// Sends one chat line as the visitor. Empty/unclean text returns false.
@@ -176,12 +165,12 @@ class DemoRoom {
     you.sendControl({'type': 'increment'});
   }
 
-  /// One scripted beat: a chat line and an increment, rotating senders.
+  /// The bots alternate increments and announce their first point in chat.
   void _beatStep() {
-    final (chatFrom, chatText) = _scriptedChats[_chatCursor++ % _scriptedChats.length];
-    _clients[chatFrom]?.social.sendChat(chatText);
-    final incrementer = _beat++ % 2 == 0 ? 'Bob' : 'Alice';
-    _clients[incrementer]?.sendControl({'type': 'increment'});
+    final name = _beat++ % 2 == 0 ? 'Bob' : 'Alice';
+    final player = _clients[name];
+    player?.sendControl({'type': 'increment'});
+    if (_beat <= 2) player?.social.sendChat('+1');
   }
 
   Future<RoomClient<RoomSnapshot>> _joinScripted(String name) async {
@@ -205,7 +194,7 @@ class DemoRoom {
     final messages = observer.social.messages;
     while (_seenChat < messages.length) {
       final m = messages[_seenChat++];
-      _emit(ChatLine(m.playerName, m.text));
+      if (!m.system) _emit(ChatLine(m.playerName, m.text));
     }
     final latest = observer.latest;
     if (latest != null) {
