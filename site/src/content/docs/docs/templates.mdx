@@ -1,0 +1,38 @@
+---
+title: Room templates
+description: Relay and physics room template config reference — the JSON schemas the server validates.
+---
+
+> You only need this section if you want the details. For the walkthrough,
+> see [Instant multiplayer server](/docs/multiplayer-server/); for the
+> mental model, [how it works](/docs/how-it-works/).
+
+
+import { Content as TemplatesDoc } from '../../../../../docs/room_templates.md';
+
+A room template is a **platform-provided authority**: you submit a JSON room
+config, the server validates it against the schema below and runs the
+corresponding authority. Templates are pinned verbatim at creation and the
+schema evolves append-only. Template rooms are usable from any language —
+clients implement the [wire contract](/docs/protocol-clients/) (`publish` /
+`publishRoom` for relay, `input` for physics) and never need an SDK at all.
+
+Quick orientation — the two templates, and the difference between them:
+**who decides what's true** (can players cheat?):
+
+- **Relay** — **the players decide**: client-authoritative state rows
+  (`players{id → row}` + `room{key → row}`), quota-enforced. A hacked
+  client can claim anything within its quotas — fine for casual,
+  nearly free to host. Core implemented in `server_sdk` as
+  `RelayAuthority`.
+- **Physics** — **the server decides**: server-simulated kinematic
+  movement over configured static colliders; players send only inputs,
+  so cheating gets nothing. Costs CPU per room; required for anything
+  competitive. Core implemented as `MovementTemplateAuthority` + the
+  `physics_react3d` backend.
+
+<TemplatesDoc />
+
+---
+*Generated from `docs/room_templates.md` (embedded above via markdown
+import).*

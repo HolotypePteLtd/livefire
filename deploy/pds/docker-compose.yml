@@ -1,0 +1,32 @@
+# Guest identity PDS for Openfire.
+#
+# Runs the reference atproto PDS (ghcr.io/bluesky-social/pds) so games can
+# create zero-signup guest accounts (the rooms-node /ident/* routes create
+# accounts here). Secrets come from your deployment environment via
+# ${VAR} interpolation — never committed. The PLC rotation key governs the
+# identity layer for every guest account created on this PDS: back it up.
+#
+# Handle resolution: guest handles are subdomains of PDS_HOSTNAME
+# and need wildcard DNS and reverse-proxy routing for sign-in.
+services:
+  pds:
+    image: ghcr.io/bluesky-social/pds:latest
+    restart: unless-stopped
+    environment:
+      PDS_HOSTNAME: ${PDS_HOSTNAME:?set the PDS hostname}
+      PDS_JWT_SECRET: ${PDS_JWT_SECRET}
+      PDS_ADMIN_PASSWORD: ${PDS_ADMIN_PASSWORD}
+      PDS_PLC_ROTATION_KEY_K256_PRIVATE_KEY_HEX: ${PDS_PLC_ROTATION_KEY}
+      PDS_DATA_DIRECTORY: /pds
+      PDS_BLOBSTORE_DISK_LOCATION: /pds/blobs
+      PDS_BLOB_UPLOAD_LIMIT: "104857600"
+      PDS_DID_PLC_URL: https://plc.directory
+      PDS_BSKY_APP_VIEW_URL: https://api.bsky.app
+      PDS_BSKY_APP_VIEW_DID: did:web:api.bsky.app
+    volumes:
+      - pds-data:/pds
+    expose:
+      - "3000"
+
+volumes:
+  pds-data:

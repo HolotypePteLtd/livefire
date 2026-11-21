@@ -1,0 +1,25 @@
+# Cloudflare Pages configuration for the Openfire docs site.
+#
+# Choice: Pages (direct upload / git-integrated), NOT Workers static assets.
+# Reasons:
+#   - The build output is a plain static directory with no server code —
+#     Pages is the simpler, purpose-built fit and is what `wrangler pages
+#     deploy` and the dashboard's git integration both target.
+#   - Git-integrated builds (dashboard connects the repo, build command
+#     `npm run build`, root dir `site`) only exist on the Pages path; a
+#     Workers-assets deployment would be direct-upload only.
+# Pages projects configure themselves through wrangler.toml with
+# `pages_build_output_dir` — that is the current wrangler convention for
+# Pages (the wrangler.jsonc migration notice applies to Workers configs).
+#
+# No secrets in this file: the API token/account id live in
+# CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID environment variables
+# (locally or as GitHub Actions secrets).
+
+name = "rooms-sdk-docs"
+pages_build_output_dir = "dist"
+compatibility_date = "2025-06-01"
+
+# Static-only deployment: no Functions, no bindings. When the site later
+# needs a preview of live node data, add bindings here (e.g. a KV or a
+# service binding to the node origin) — never secrets.

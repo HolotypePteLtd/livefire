@@ -1,0 +1,60 @@
+services:
+  rooms-node:
+    build:
+      context: .
+    image: rooms-node:latest
+    restart: unless-stopped
+    volumes:
+      # Node config (see deploy/node.example.json). The publicBaseUrl must
+      # match DOMAIN below.
+      - ./node.json:/etc/rooms/node.json:ro
+      # AT Protocol OAuth client key (auth.providers: [.., atproto]).
+      # Generate once: cd packages/node &&
+      #   dart run tool/gen_client_jwks.dart ./oauth-client-jwks.json
+      # Omit this mount when the atproto provider is disabled.
+      - ./oauth-client-jwks.json:/etc/rooms/oauth-client-jwks.json:ro
+      - rooms-data:/var/lib/rooms
+    expose:
+      - "8787"
+
+  # One-shot init container: builds the static docs site (site/) and
+  # publishes dist/ into the shared rooms-site volume for Caddy. The build
+  # context is the repo root because the site markdown-imports docs/ and
+  # cross-checks packages/ at build time (see site/Dockerfile).
+  site:
+    build:
+      context: .
+      dockerfile: site/Dockerfile
+    image: rooms-site:latest
+    restart: "no"
+    volumes:
+      - rooms-site:/srv/site
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN=rooms.example.com in .env}
+      # ACME_EMAIL: you@example.com # optional, recommended
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Static site published by the init container above.
+      - rooms-site:/srv/site:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      rooms-node:
+        condition: service_started
+      site:
+        # Caddy must not 404/502 the static routes before the site exists.
+        condition: service_completed_successfully
+
+volumes:
+  rooms-data:
+  rooms-site:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,90 @@
+---
+title: Wire protocol
+description: The Openfire session wire protocol — every frame, its fields, direction and semantics.
+---
+
+> You only need this section if you want the details. For the walkthrough,
+> see [Instant multiplayer server](/docs/multiplayer-server/); for the
+> mental model, [how it works](/docs/how-it-works/).
+
+
+import { Content as ProtocolDoc } from '../../../../../docs/protocol.md';
+
+The frame table below is derived from the implementation
+(`packages/protocol/lib/src/room_hub.dart`) and kept honest by a build-time
+cross-check. The machine-readable version — with limits, lanes and close
+codes — is [`/spec/rooms-protocol.json`](/spec/rooms-protocol.json).
+
+Control and social frames are JSON text: client → server frames are
+capped at 4096 characters and rate-limited to 120 per second per peer,
+and the handshake, social and error frames always ride this reliable
+lane. Server → client state frames (snapshots and deltas) are also JSON
+by default — with one exception: a client that opts in with
+`binaryStates: true` on a room with a binary state codec receives them
+as binary frames instead, and JSON remains the fallback for everyone
+else. Binary frames never begin with `{`, so both kinds share one
+connection. Disposable state deltas prefer a separate state lane when
+the transport provides one.
+
+## Frame table
+
+### Handshake — client → server
+
+| Frame | Fields | Semantics |
+| --- | --- | --- |
+| `join` | `type`, `protocol` (int), `name` (string, fresh joins), `resume` (string, optional), `binaryStates` (bool, optional), *game fields* | First frame on a fresh transport, within 5 s. `protocol` must exactly match. `resume` re-attaches a reserved slot; unknown/expired → error. The whole message goes to `validateJoin`. Rejections (banned, locked, full, invalid) → `error` + close 1008 |
+
+### Handshake — server → client
+
+| Frame | Fields | Semantics |
+| --- | --- | --- |
+| `welcome` | `type`, `protocol`, `id` (peer id), `resume` (one-time token), `capacity`, *authority `welcome()` fields* | Sent after a successful join **or** resume; ids are stable across resume (`p1`, `p2`, …) |
+| `baseline` | `type`, `epoch`, `tick`, *full snapshot state* | Reliable full quantized snapshot; the reference point for all following deltas |
+| `snapshot` | `type`, `epoch`, `tick`, `initial` (bool, optional), *full state* | Sent with `initial: true` right after the baseline; refreshed ~1 s / on epoch change; recovery copies for stalled receivers carry `initial: true` too |
+
+### Input and social — client → server
+
+| Frame | Fields | Semantics |
+| --- | --- | --- |
+| `ack` | `type`, `ack` (int) | Confirms the last applied snapshot tick. The `ack` field is honored on **any** frame (`ackTick ≤ ack ≤ sentTick`) and drives stall eviction |
+| `chat` | `type`, `text` | 1–280 chars, single line; 4 msgs / 10 s. Rejection → `socialNotice`, no disconnect |
+| `ping` | `type`, `kind` (`here`/`help`/`ball`) | Location comes from the authority (`RoomSocialAuthority.pingLocation`), never the client; 3 / 5 s |
+| `moderate` | `type`, `action` (`lock`/`kick`/`ban`), `locked` (bool, lock), `playerId` (kick/ban) | Leader only. `lock` refuses fresh joins; `kick`/`ban` remove the target (`removed` frame + close 1008); `ban` records the transport-verified identity (≤ 256) |
+| `leave` | `type` | Voluntary leave; slot released immediately, reply `left` |
+| *game commands* | `type` (game-defined), `ack` (optional), *payload* | Everything else goes verbatim to `authority.command()` — e.g. relay `publish`/`publishRoom`, physics `input`, the example's `increment`. Throwing from `command` disconnects the sender |
+
+### Social and errors — server → client
+
+| Frame | Fields | Semantics |
+| --- | --- | --- |
+| `social` | `type`, `leaderId`, `locked`, `members` (`[{id, name, connected, canBan}]`), `history` (on join) | Roster broadcast on every membership/lock change; the join copy carries chat history (≤ 100) |
+| `chat` | `type`, `message` (`{id, playerId, playerName, text, system}`) | User chat and system notices (joined / reconnected / left / removed) |
+| `ping` | `type`, `ping` (`{id, playerId, playerName, kind, location {x, y, z, epoch}}`) | Broadcast; expires after 8 s |
+| `left` | `type` | Sent to the peer that just left |
+| `removed` | `type`, `message` | Sent to a kicked/banned peer before close 1008 |
+| `socialNotice` | `type`, `message` | Rejected social attempt; sender only, no disconnect |
+| `error` | `type`, `message` | Any protocol error; always followed by close 1008 |
+
+### State replication — server → client
+
+| Frame | Fields | Semantics |
+| --- | --- | --- |
+| `state` | `type`, `base` (int), `tick`, `epoch`, `delta` (`{remove?, set}`) | Baseline-relative delta on the disposable lane. Deltas whose `base`/`epoch` do not match the receiver's baseline are dropped and repaired by the next baseline |
+
+### Close codes
+
+| Code | Reason | When |
+| --- | --- | --- |
+| 1000 | `Reconnected elsewhere` | the session resumed on a new transport |
+| 1001 | `Host closed the room` / `State receiver stalled` | room closed or drained; receiver unacked > 5 s while blocked |
+| 1008 | `Join timeout` / `Invalid request` / `Removed by host` | no join in 5 s; any protocol error; kick/ban |
+
+## Repository document
+
+<ProtocolDoc />
+
+---
+*Generated from `docs/protocol.md` (embedded above via markdown import) and
+the frame handling in `packages/protocol/lib/src/room_hub.dart`; the message
+table is cross-checked against the source at build time
+(`site/scripts/check-spec.mjs`).*

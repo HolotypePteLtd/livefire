@@ -1,0 +1,56 @@
+/* World demo frames (server + client iframes) and the docs-page section.
+ * Near-black cool backdrop to sit inside the site's dark theme. */
+.world-frame-body {
+  margin: 0;
+  font: 12px/1.45 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #edf1f7;
+  background: #12151d;
+}
+
+.world-label {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  margin: 0;
+  z-index: 2;
+  color: #97a1b5;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+#world-status {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  margin: 0;
+  z-index: 2;
+  color: #57d9a3;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 11px;
+}
+
+/* The unsupported message must fit the slim (56px) server strip:
+ * wider wrap + smaller type than the tick line, ~3 lines max. */
+.world-unsupported {
+  color: #e5534b;
+  font-size: 10px;
+  max-width: 70ch;
+  text-align: right;
+}
+
+.world-hint {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  margin: 0;
+  z-index: 2;
+  color: #97a1b5;
+}
+
+#world-canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  outline: none;
+}

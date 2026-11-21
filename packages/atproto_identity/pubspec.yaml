@@ -1,0 +1,19 @@
+name: rooms_atproto
+description: >-
+  AT Protocol identity for Openfire: OAuth sign-in helpers (loopback flow
+  for desktop apps), a DID-scoped session vault, session restore/refresh,
+  and the client helper for the rooms node's atproto auth provider. Pure
+  identity — no rooms, repos, blobs or game coupling. (Directory keeps the
+  brief's packages/atproto_identity path; the pub package name differs
+  because the name atproto_identity is taken by the Bluesky package that
+  atproto_oauth itself depends on.)
+version: 0.1.0
+publish_to: none
+environment:
+  sdk: ^3.12.0
+dependencies:
+  atproto_oauth: ^0.8.3
+  http: ^1.4.0
+dev_dependencies:
+  test: ^1.25.6
+  lints: ^6.0.0

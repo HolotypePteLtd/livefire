@@ -1,0 +1,68 @@
+# Deploys the static docs when manually dispatched with deployment secrets.
+
+name: Deploy docs to Cloudflare Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-docs:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      # Full-repo checkout: the site build markdown-imports docs/ and the
+      # build-time spec check reads packages/ (see site/README.md).
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # The `secrets` context is illegal in job-level `if:` — using it there
+      # makes the whole workflow file invalid (every run fails red at 0s).
+      # Guard at step level instead: with the secrets absent the job stays
+      # green with everything after this step skipped.
+      - id: guard
+        run: |
+          if [ -n "$CF_TOKEN" ] && [ -n "$CF_ACCOUNT" ]; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Cloudflare secrets not set — deploy steps will skip."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - uses: actions/setup-node@v4
+        with:
+          # Single source of truth: the same .nvmrc contributors use locally
+          # (Node 24; the engines field in site/package.json allows 22-26,
+          # all verified to build — see site/README.md).
+          node-version-file: site/.nvmrc
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - uses: dart-lang/setup-dart@2286a0c042b44434fe26d292bbce8d34f7ec662b # v1
+        if: steps.guard.outputs.skip != 'true'
+
+      - run: npm ci
+        if: steps.guard.outputs.skip != 'true'
+
+      # Same build as locally: generates llms.txt/llms-full.txt, runs the
+      # spec-vs-source cross-check (fails on mismatch), then astro build.
+      - run: npm run build
+        if: steps.guard.outputs.skip != 'true'
+
+      - uses: cloudflare/wrangler-action@v3
+        if: steps.guard.outputs.skip != 'true'
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: site
+          # Project name + dist/ come from wrangler.toml; the branch is
+          # detected from the git context (master = production branch).
+          command: pages deploy

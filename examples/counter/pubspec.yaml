@@ -1,0 +1,15 @@
+name: counter
+description: Minimal Openfire example - a shared counter room with chat, hosted by a real RoomServer.
+version: 0.1.0
+publish_to: none
+environment:
+  sdk: ^3.12.0
+dependencies:
+  protocol:
+    path: ../../packages/protocol
+  client:
+    path: ../../packages/client
+  server_sdk:
+    path: ../../packages/server_sdk
+dev_dependencies:
+  lints: ^6.0.0

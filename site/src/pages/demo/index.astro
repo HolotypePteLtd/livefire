@@ -1,0 +1,36 @@
+---
+// Standalone host page for the live demo, served at /demo/ and embedded on
+// /docs/multiplayer-server/ via a lazy iframe. The markup and CSS live here
+// (versioned); the compiled engine (public/demo/, built by
+// scripts/build-demo.mjs from site/demo) only boots when this page loads —
+// and the iframe itself is loading="lazy", so the docs page never pays for
+// the demo on first paint.
+import '../../styles/demo.css';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Openfire — live multiplayer demo</title>
+    <meta name="robots" content="noindex" />
+  </head>
+  <body>
+    <main>
+      <p class="demo-label">
+        <b>A real room engine</b> — the same engine the server runs, compiled
+        and running in your browser tab. Two scripted players (Alice and Bob)
+        joined it over the room protocol; join as the third player yourself.
+        In production the same engine runs as a server process.
+      </p>
+      <div id="demo-root">
+        <p class="demo-loading">Loading the room engine…</p>
+      </div>
+      <noscript>
+        <p class="demo-error">The live demo needs JavaScript.</p>
+      </noscript>
+      <script is:inline type="module" src="/demo/boot.mjs"></script>
+    </main>
+  </body>
+</html>

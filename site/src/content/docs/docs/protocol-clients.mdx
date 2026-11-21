@@ -1,0 +1,189 @@
+---
+title: Writing a client in any language
+description: The minimum wire contract for a rooms client — join, input and acks, snapshots, resume — straight from the machine-readable spec.
+---
+
+> You only need this section if you want the details. For the walkthrough,
+> see [Instant multiplayer server](/docs/multiplayer-server/); for the
+> mental model, [how it works](/docs/how-it-works/).
+
+
+The product is the **wire protocol** and the server that runs it. The
+official typed client SDKs are a Dart package and a TypeScript package
+(`sdk/typescript` in the repository), but any language with a
+WebSocket client and JSON can join a room, play, chat and resume: relay rooms,
+physics rooms and all chat/moderation features are usable from any language
+that implements the frames below. (Bringing your **own** game authority —
+custom simulation beyond the relay and physics templates — goes through
+the SDK today; see [room-authority.md](/spec/room-authority.md).)
+
+Everything here is specified as data in
+[rooms-protocol.json](/spec/rooms-protocol.json) — frames, fields, limits and
+close codes — which is cross-checked against the implementation at build
+time. The [wire protocol reference](/docs/protocol/) has the full frame
+table; this page is the distilled client-side checklist.
+
+## 1. Connect
+
+Open a WebSocket to the room URL you got from the API (or your own
+server):
+
+```text
+wss://host/play/<roomKey>?token=<oneTimeJoinToken>
+```
+
+The join token authorizes **exactly one** successful WebSocket join; the server
+validates it before the upgrade and consumes it on success. Send your `join`
+frame within **5 seconds** of connecting or the transport is closed
+(`1008 Join timeout`).
+
+## 2. Join / resume handshake
+
+Send a text frame:
+
+```json
+{ "type": "join", "protocol": 71, "name": "Ada" }
+```
+
+- `protocol` — an integer that must **exactly** equal the room's configured
+  protocol version, or you receive an error frame and close
+  (`Incompatible game version`).
+- `name` — 1-24 characters after trim; control characters and bidi overrides
+  are rejected.
+- Optional `resume` — a one-time resume token from a prior `welcome`
+  (see step 6). Optional `binaryStates: true` — opts you into the binary
+  state lane when the transport and codec support it (see step 5).
+
+Refusals arrive as an `error` frame (with the reason) followed by close 1008:
+banned identity, locked room, room at capacity, or template validation.
+
+On success the server sends `welcome` on the reliable lane:
+
+```json
+{ "type": "welcome", "protocol": 71, "id": "p1", "resume": "…", "capacity": 8 }
+```
+
+plus any game-defined fields the template adds (relay: a sequence seed;
+physics rooms: your assigned spawn). `id` is your peer id (`p1`, `p2`, …) and is
+stable across resume.
+
+Immediately after `welcome` you receive a **`baseline`** — the full
+quantized state with its `epoch` and `tick` — and then a `snapshot` frame
+with `initial: true` (seed any playback/interpolation clock from it).
+
+## 3. Input and acks
+
+Every non-handshake client frame whose `type` is not `join`, `ack`, `chat`,
+`ping`, `moderate` or `leave` is a **game command**: the hub delivers it
+verbatim to the room's authority. The frame shapes are template-defined —
+relay rooms use `publish` / `publishRoom`, physics rooms use `input`
+(see [room templates](/docs/templates/)).
+
+Frame budget, enforced per peer:
+
+- client-to-server frames are **JSON text** (UTF-8), capped at
+  **4096 characters** — binary client frames are rejected;
+- **120 packets/s** sustained (`Input rate exceeded` → error frame +
+  close 1008), with a bounded 600-packet stall buffer so a briefly blocked
+  host does not punish honest clients.
+
+Acknowledge every snapshot you apply, either as a bare frame or piggybacked
+on your next command:
+
+```json
+{ "type": "ack", "ack": 1204 }
+```
+
+`ack` is the latest applied snapshot tick. Acks outside
+`ackTick <= ack <= sentTick` are ignored. If the server runs ahead of your
+acks by half a simulation second you are considered blocked; with no ack
+progress for **5 s** you are evicted (`1001 State receiver stalled`). A
+client that cannot keep up receives at most one recovery snapshot per
+simulation second — apply baselines when in doubt.
+
+## 4. State replication
+
+The server sends state as **baseline-relative deltas**:
+
+- a full **`baseline`** on the reliable lane right after join/resume, then
+  refreshed about **once per second** and on every **epoch** change;
+- **`state`** deltas in between — `{ "type": "state", "base": <baseline
+  tick>, "tick": …, "epoch": …, "delta": … }` — on the disposable state lane
+  when the transport provides one;
+- a `snapshot` frame (full state, no `delta`) accompanies each baseline
+  refresh and recovery.
+
+Delta rules that matter to a client implementation:
+
+- A delta whose `base` or `epoch` does not match the baseline you hold is
+  **discarded** — never buffered, never retried. The next baseline repairs
+  you. Losing deltas is always safe; that is the design.
+- `delta` has the shape `{"remove": [keys], "set": {key: value-or-patch}}`:
+  `set` replaces a key, and a `{ "patch": … }` value merges recursively into
+  the existing object at that key.
+- Floats are quantized to **4 decimal places** — do not compare replicated
+  values for exact equality, and expect sub-quantum changes to drop out.
+
+Epoch changes (template/host restarts, authority swaps) invalidate
+everything: a new epoch means a fresh baseline and a clean slate — drop all
+cached state when the epoch changes.
+
+## 5. Binary lane (optional)
+
+If you sent `binaryStates: true` and the room is configured with a binary
+`WireStateCodec` (FlatBuffers — bindings exist for many languages), states
+arrive as binary frames instead of JSON. Binary frames **never begin with
+`{`**, so a migrating client can detect the frame kind from the first byte.
+JSON text always remains the fallback; clients that do not opt in keep
+getting JSON.
+
+## 6. Resume
+
+`welcome` hands you a one-time `resume` token. If your connection drops,
+reconnect to the same URL-free flow and send:
+
+```json
+{ "type": "join", "protocol": 71, "name": "Ada", "resume": "…" }
+```
+
+Within the **15 s** grace window you get the same peer id back, a fresh
+resume token, roster and chat replay. The token is single-use and bound to
+your verified transport identity — a different identity gets
+`Session identity changed; join again`. Resuming elsewhere closes the old
+transport (`1000 Reconnected elsewhere`). After the grace window you need a
+fresh join — and on a hosted server, a fresh join token.
+
+## 7. Chat, roster and moderation
+
+These ride the same reliable lane and work identically in every language:
+
+- `chat` — 1-280 characters, single line; 4 messages / 10 s per player.
+  Violations are a `socialNotice` frame to you only — no disconnect.
+- `social` — the roster snapshot: members, leader, lock state, history.
+- `ping` — `here`, `help`, `ball`; locations are **authority-supplied** and
+  expire after 8 s.
+- `moderate` — lock, kick, ban (host/leader only; bans bind to verified
+  identities, never names).
+
+## Close codes you should handle
+
+| Code | Reason | Meaning |
+| --- | --- | --- |
+| 1000 | Reconnected elsewhere | your session resumed from a new transport |
+| 1001 | Host closed the room | normal shutdown / drain |
+| 1001 | State receiver stalled | you stopped acking for > 5 s |
+| 1008 | Join timeout | no `join` frame within 5 s |
+| 1008 | Removed by host | kick or ban |
+| 1008 | Invalid request | protocol error (an `error` frame precedes it) |
+
+## Where to go next
+
+- [rooms-protocol.json](/spec/rooms-protocol.json) — every frame, field,
+  limit and close code, as data.
+- [Wire protocol](/docs/protocol/) — the full reference table.
+- [Room templates](/docs/templates/) — the `publish`/`publishRoom` (relay)
+  and `input` (physics) command shapes.
+- [Rooms server HTTP API](/docs/api/) — creating rooms and issuing join
+  tokens.
+- [room-authority.md](/spec/room-authority.md) — the authority contract, for
+  when you outgrow the templates (via the SDK today).

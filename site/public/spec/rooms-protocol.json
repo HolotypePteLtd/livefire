@@ -1,0 +1,290 @@
+{
+  "name": "rooms-protocol",
+  "title": "rooms_sdk wire protocol",
+  "specVersion": 1,
+  "description": "Frame-level wire contract of the rooms_sdk room engine (RoomHub). Derived from the implementation, not the prose: every hub-handled frame below is cross-checked against the source at build time (site/scripts/check-spec.mjs).",
+  "sources": {
+    "hub": "packages/protocol/lib/src/room_hub.dart",
+    "snapshots": "packages/protocol/lib/src/snapshot_codec.dart",
+    "social": "packages/protocol/lib/src/social_host.dart",
+    "chat": "packages/protocol/lib/src/chat.dart",
+    "clock": "packages/protocol/lib/src/step_clock.dart",
+    "authorityDelegated": {
+      "publish, publishRoom": "packages/server_sdk/lib/src/relay_authority.dart",
+      "input": "packages/server_sdk/lib/src/movement_authority.dart"
+    }
+  },
+  "protocolVersion": {
+    "type": "integer",
+    "rule": "chosen by the game; the client's join.protocol must exactly equal the hub's configured value or the join is rejected ('Incompatible game version')"
+  },
+  "transport": {
+    "framing": "JSON text frames (UTF-8). Client-to-server frames MUST be text (binary frames are rejected as 'Message too large') and are capped at 4096 characters. Server-to-client state frames (snapshots and deltas) MAY be binary when the client opts in with binaryStates and the room has a WireStateCodec; binary frames never begin with '{' so both kinds share one transport, and JSON remains the fallback.",
+    "lanes": {
+      "control": "reliable, ordered (GameConnection.send / sendBytes). Handshake, social, error frames, baselines and recovery snapshots always use it.",
+      "state": "optional disposable lane when the transport implements StateGameConnection.sendState / BinaryStateGameConnection.sendStateBytes. JSON deltas (frames starting with {\"type\":\"state\",) and binary deltas prefer it; loss of a state frame never stalls the receiver because the next baseline repairs it.",
+      "binary": "when the peer requested binaryStates, the transport implements BinaryGameConnection and a WireStateCodec is configured, snapshots and deltas are encoded through the codec. Binary frames never begin with '{', so binary and JSON frames can share a transport during migration."
+    }
+  },
+  "limits": {
+    "maxClientFrameChars": 4096,
+    "inputRate": { "packetsPerSecond": 120, "scope": "per peer, wall-clock second windows; exceeded frames throw 'Input rate exceeded' (error frame + close 1008)" },
+    "stallBuffer": { "capPackets": 600, "expirySeconds": 1, "credit": "after a host stall >= 250 ms each peer gets stallMs * 120/1000 extra packets (capped), so a blocked host does not disconnect honest clients" },
+    "receiverStall": { "blockedWhen": "sentTick - ackTick >= simulationHz / 2", "eviction": "no ack progress for > 5 s while blocked -> close 1001 'State receiver stalled'", "recovery": "while blocked, at most one recovery snapshot per simulationHz ticks" },
+    "snapshot": {
+      "quantization": "floats rounded to 4 decimal places (float32 deadband: sub-quantum changes drop out of deltas)",
+      "baselineRefreshTicks": "simulationHz (about once per second) and on any epoch change; deltas always refer to the current reliable baseline, never to another delta"
+    },
+    "handshake": { "joinTimeoutSeconds": 5, "resumeGraceSeconds": 15, "resumeGraceNote": "resumeGrace is a RoomHub constructor parameter; 15 s is the default" },
+    "playerName": "1-24 characters after trim; control characters and bidi overrides rejected",
+    "chat": { "maxLength": 280, "rate": "4 messages / 10 s per player", "historyLimit": 100, "bubbleLifetimeSeconds": 10, "text": "single line, trimmed, no control characters or bidi overrides" },
+    "pings": { "kinds": ["here", "help", "ball"], "rate": "3 / 5 s per player", "lifetimeSeconds": 8 },
+    "moderation": { "banListMax": 256, "banRequires": "an identity verified by the transport adapter, never a join payload", "banScope": "room lifetime" },
+    "room": { "capacity": ">= 1, declared by the authority; joins beyond it are refused with 'Room is full'", "simulationHz": "default 120", "snapshotHz": "default 20", "rateRule": "snapshotHz <= simulationHz", "clock": "fixed step 1/simulationHz; wall-clock catch-up clamped to 0.1 s per advance, so simulated time never dilates under load" }
+  },
+  "frames": [
+    {
+      "name": "join",
+      "direction": "client->server",
+      "handledBy": "hub",
+      "lane": "control",
+      "when": "first frame on a fresh transport; must arrive within the 5 s join timeout or the transport is closed (1008 'Join timeout')",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"join\"; anything else is 'Incompatible game version'" },
+        { "name": "protocol", "type": "int", "required": true, "note": "must exactly equal the hub's protocolVersion" },
+        { "name": "name", "type": "string", "required": "fresh join (ignored when resume is present)", "note": "1-24 chars after trim, no control/bidi characters; the hub trims before storing" },
+        { "name": "resume", "type": "string", "required": false, "note": "one-time resume token from a prior welcome. Unknown token -> 'Session expired; join again'. Bound to the transport-verified identity: a different identity gets 'Session identity changed; join again'. On success the old transport is closed (1000 'Reconnected elsewhere')" },
+        { "name": "binaryStates", "type": "bool", "required": false, "note": "true opts the peer into the binary state lane when transport + codec support it" }
+      ],
+      "extra": "the whole decoded message (including game-specific fields) is passed to RoomAuthority.validateJoin; it may reject the join or return join data for addPlayer/resume",
+      "freshJoinRefusals": [
+        "banned transport identity -> 'You are banned from this room'",
+        "locked room -> 'The host has locked this room'",
+        "room at capacity -> 'Room is full' (StateError)",
+        "validateJoin throwing FormatException/StateError -> its message"
+      ],
+      "onError": "error frame with the reason, then close 1008"
+    },
+    {
+      "name": "ack",
+      "direction": "client->server",
+      "handledBy": "hub",
+      "lane": "control",
+      "when": "any time after welcome; a bare ack is consumed by the hub and never reaches the authority",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"ack\"" },
+        { "name": "ack", "type": "int", "required": true, "note": "latest applied snapshot tick. Accepted on ANY client frame (not just type=ack) when ackTick <= ack <= sentTick; advances the peer's ack clock and lastAckAt, which drives stall eviction" }
+      ]
+    },
+    {
+      "name": "chat",
+      "direction": "client->server",
+      "handledBy": "hub",
+      "lane": "control",
+      "when": "after join; rides the social lane",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"chat\"" },
+        { "name": "text", "type": "string", "required": true, "note": "1-280 chars, single line, trimmed, no control/bidi characters; rate 4 / 10 s" }
+      ],
+      "onError": "socialNotice to the sender only (no disconnect): 'Use 1-280 characters on one line', 'Chat is too fast; wait a few seconds'"
+    },
+    {
+      "name": "ping",
+      "direction": "client->server",
+      "handledBy": "hub",
+      "lane": "control",
+      "when": "after join; requires the authority to implement RoomSocialAuthority (coordinates are authority-supplied, never client-supplied)",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"ping\"" },
+        { "name": "kind", "type": "string", "required": true, "note": "one of here | help | ball; rate 3 / 5 s" }
+      ],
+      "onError": "socialNotice: 'Ping unavailable' (bad kind, authority without locations, or no coordinates), 'Pings are too fast; wait a few seconds', 'Unknown ping'"
+    },
+    {
+      "name": "moderate",
+      "direction": "client->server",
+      "handledBy": "hub",
+      "lane": "control",
+      "when": "leader only (RoomSocialAuthority.roomLeaderId if implemented, else the first connected peer); non-leaders get 'Only the host can manage the room'",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"moderate\"" },
+        { "name": "action", "type": "string", "required": true, "note": "lock | kick | ban" },
+        { "name": "locked", "type": "bool", "required": "action=lock", "note": "new lock state; locked rooms refuse fresh joins" },
+        { "name": "playerId", "type": "string", "required": "action=kick|ban", "note": "must be another present peer ('Choose another player'); the target receives a removed frame and is closed with 1008. ban additionally records the target's verified transport identity (list capped at 256); unauthenticated targets cannot be banned" }
+      ],
+      "onError": "socialNotice to the sender"
+    },
+    {
+      "name": "leave",
+      "direction": "client->server",
+      "handledBy": "hub",
+      "lane": "control",
+      "when": "voluntary leave; releases the slot immediately (no resume)",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"leave\"" }
+      ],
+      "effects": "removePlayer, roster broadcast, system chat 'left the room'; the leaver is sent a left frame and the transport closes normally"
+    },
+    {
+      "name": "command (game-defined)",
+      "direction": "client->server",
+      "handledBy": "authority",
+      "lane": "control",
+      "when": "every non-handshake frame whose type is not join/ack/chat/ping/moderate/leave is delivered verbatim to RoomAuthority.command(peerId, message) after rate limiting and piggybacked ack processing",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "game-defined; the hub attaches no meaning" },
+        { "name": "ack", "type": "int", "required": false, "note": "piggyback ack, processed by the hub before dispatch" },
+        { "name": "...", "type": "any", "required": false, "note": "game payload, capped by the 4 KB frame limit and the 120/s input rate" }
+      ],
+      "documentedInstances": [
+        { "type": "publish", "where": "relay template: writes the sender's own player row key (quota-enforced, drop-and-count on rejection)" },
+        { "type": "publishRoom", "where": "relay template: writes a leader-only room row" },
+        { "type": "input", "where": "physics template: declared-axis movement intent, clamped server-side, rate inputsPerSecond" }
+      ],
+      "onError": "an exception thrown from command is a protocol error (error frame + close 1008); tolerant authorities drop-and-count instead (see docs/room_templates.md)"
+    },
+    {
+      "name": "welcome",
+      "direction": "server->client",
+      "handledBy": "hub",
+      "lane": "control (reliable)",
+      "when": "immediately after a successful join or resume handshake",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"welcome\" (hub-forced, overrides any authority key)" },
+        { "name": "protocol", "type": "int", "required": true, "note": "the hub's protocolVersion (echo)" },
+        { "name": "id", "type": "string", "required": true, "note": "hub-assigned peer id (p1, p2, ...); stable across resume" },
+        { "name": "resume", "type": "string", "required": true, "note": "one-time resume token; reuse after the grace window is refused" },
+        { "name": "capacity", "type": "int", "required": true, "note": "authority.capacity echo" },
+        { "name": "...", "type": "any", "required": false, "note": "spread from RoomAuthority.welcome(id) — game fields (relay: {\"sequence\":0}; physics adds the assigned spawn)" }
+      ]
+    },
+    {
+      "name": "baseline",
+      "direction": "server->client",
+      "handledBy": "hub",
+      "lane": "control (reliable)",
+      "when": "right after welcome on every join/resume: the full quantized snapshot with its type field rewritten from \"snapshot\" to \"baseline\"",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"baseline\"" },
+        { "name": "epoch", "type": "int", "required": true, "note": "authority epoch; an epoch change forces a new baseline everywhere" },
+        { "name": "tick", "type": "int", "required": true, "note": "baseline tick; deltas reference it as state.base" },
+        { "name": "...", "type": "any", "required": true, "note": "full authority snapshot state (game-defined; floats quantized to 4 decimals)" }
+      ]
+    },
+    {
+      "name": "snapshot",
+      "direction": "server->client",
+      "handledBy": "hub",
+      "lane": "control (reliable)",
+      "when": "(a) immediately after the join/resume baseline, with initial: true; (b) periodic baseline refresh (every simulationHz ticks, or on epoch change) without initial; (c) recovery: while a receiver is stalled, at most once per simulationHz ticks, with initial: true — a display-only frame that never becomes the delta baseline",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"snapshot\" (the authority supplies it; the hub preserves it)" },
+        { "name": "epoch", "type": "int", "required": true },
+        { "name": "tick", "type": "int", "required": true },
+        { "name": "initial", "type": "bool", "required": false, "note": "true on the join-time frame and on recovery frames; clients seed their playback clock from it" },
+        { "name": "...", "type": "any", "required": true, "note": "full authority snapshot state" }
+      ]
+    },
+    {
+      "name": "state",
+      "direction": "server->client",
+      "handledBy": "hub",
+      "lane": "state (disposable when the transport provides one, else control)",
+      "when": "snapshot cuts whose quantized snapshot differs from the current baseline",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"state\"" },
+        { "name": "base", "type": "int", "required": true, "note": "tick of the baseline this delta refers to; a receiver holding a different base (or epoch) discards the delta and waits for the next baseline — a lost or reordered delta cannot corrupt the next one" },
+        { "name": "tick", "type": "int", "required": true },
+        { "name": "epoch", "type": "int", "required": true, "note": "must equal the receiver's baseline epoch" },
+        { "name": "delta", "type": "object", "required": true, "note": "{ remove?: string[], set: { [key]: value | { patch: <recursive delta> } } } — nested maps diff recursively as patch; presence masks preserve resets to zero/false/null" }
+      ]
+    },
+    {
+      "name": "social",
+      "direction": "server->client",
+      "handledBy": "hub",
+      "lane": "control (reliable)",
+      "when": "after every roster change (join, resume, leave, kick/ban, lock) and once with history right after the join/resume snapshot",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"social\"" },
+        { "name": "leaderId", "type": "string|null", "required": true, "note": "authority-declared leader or first-connected-peer fallback" },
+        { "name": "locked", "type": "bool", "required": true },
+        { "name": "members", "type": "array", "required": true, "note": "[{ id, name, connected (bool, false while inside the resume grace window), canBan (bool, true only with a verified identity), profile (optional host-supplied identity profile map, e.g. {did, handle, displayName, avatar} for AT Protocol sign-ins) }]" },
+        { "name": "history", "type": "array", "required": false, "note": "chat history (most recent, capped at 100) — present only on the join/resume roster" }
+      ]
+    },
+    {
+      "name": "chat",
+      "direction": "server->client",
+      "handledBy": "hub",
+      "lane": "control (reliable)",
+      "when": "broadcast to every connected peer on chat, and as system notices on join ('joined the room'/'reconnected'), leave ('left the room') and kick/ban ('was removed by the host')",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"chat\"" },
+        { "name": "message", "type": "object", "required": true, "note": "{ id (int, monotonic), playerId, playerName, text, system (bool) }" }
+      ]
+    },
+    {
+      "name": "ping",
+      "direction": "server->client",
+      "handledBy": "hub",
+      "lane": "control (reliable)",
+      "when": "broadcast when a peer's ping passes validation; expires after 8 s",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"ping\"" },
+        { "name": "ping", "type": "object", "required": true, "note": "{ id (int), playerId, playerName, kind (here|help|ball), location: { x, y, z (finite doubles), epoch (int) } } — coordinates are authority-supplied" }
+      ]
+    },
+    {
+      "name": "left",
+      "direction": "server->client",
+      "handledBy": "hub",
+      "lane": "control (reliable)",
+      "when": "sent to the peer that sent leave, just before its transport closes",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"left\"" }
+      ]
+    },
+    {
+      "name": "removed",
+      "direction": "server->client",
+      "handledBy": "hub",
+      "lane": "control (reliable)",
+      "when": "sent to the target of a kick or ban before the transport is closed with 1008",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"removed\"" },
+        { "name": "message", "type": "string", "required": true, "note": "'The host removed you from this room' or 'The host banned you from this room'" }
+      ]
+    },
+    {
+      "name": "socialNotice",
+      "direction": "server->client",
+      "handledBy": "hub",
+      "lane": "control (reliable)",
+      "when": "a rejected chat/ping/moderation attempt; sent to the offending sender only, no disconnect",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"socialNotice\"" },
+        { "name": "message", "type": "string", "required": true, "note": "human-readable reason" }
+      ]
+    },
+    {
+      "name": "error",
+      "direction": "server->client",
+      "handledBy": "hub",
+      "lane": "control (reliable)",
+      "when": "any protocol error: non-text or oversized frame, invalid JSON, wrong join type/protocol, bad name, banned identity, full room, expired/identity-changed resume, locked room, validateJoin/command exceptions, input rate exceeded. Always followed by close 1008 'Invalid request'",
+      "fields": [
+        { "name": "type", "type": "string", "required": true, "note": "literal \"error\"" },
+        { "name": "message", "type": "string", "required": true, "note": "FormatException/StateError message, or 'Malformed message' for anything else" }
+      ]
+    }
+  ],
+  "closeCodes": [
+    { "code": 1000, "reason": "Reconnected elsewhere", "when": "the same session resumed from a new transport; the old transport is closed" },
+    { "code": 1001, "reason": "Host closed the room", "when": "hub.close() — also the drain path (node DELETE /v1/rooms/:id)" },
+    { "code": 1001, "reason": "State receiver stalled", "when": "receiver blocked (sentTick - ackTick >= simulationHz/2) with no ack progress for > 5 s" },
+    { "code": 1008, "reason": "Join timeout", "when": "no join frame within 5 s of transport attach" },
+    { "code": 1008, "reason": "Removed by host", "when": "kick or ban" },
+    { "code": 1008, "reason": "Invalid request", "when": "any protocol error after an error frame" }
+  ]
+}

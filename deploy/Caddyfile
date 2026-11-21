@@ -1,0 +1,45 @@
+# TLS terminates here (Let's Encrypt auto; set DOMAIN, optionally
+# ACME_EMAIL, in the compose environment). WebSockets need no extra
+# directives — reverse_proxy upgrades them transparently.
+#
+# Routing split: the node keeps the API and play paths; the static docs
+# site (landing page, /docs/*, llms.txt, /spec/*) is served from the
+# rooms-site volume published by the one-shot `site` init container.
+{$DOMAIN} {
+	encode zstd gzip
+	handle /v1/* {
+		reverse_proxy rooms-node:8787
+	}
+	handle /play/* {
+		reverse_proxy rooms-node:8787
+	}
+	handle /oauth/* {
+		reverse_proxy rooms-node:8787
+	}
+	handle /auth/* {
+		reverse_proxy rooms-node:8787
+	}
+	handle /panel {
+		reverse_proxy rooms-node:8787
+	}
+	handle /panel/* {
+		reverse_proxy rooms-node:8787
+	}
+	handle /ident/* {
+		reverse_proxy rooms-node:8787
+	}
+	handle {
+		# Clickjacking hardening: the site may only be framed by itself
+		# (the world-demo iframes are same-origin). Mirrors site/public/
+		# _headers for the Cloudflare Pages deployment path.
+		header {
+			X-Frame-Options SAMEORIGIN
+			Content-Security-Policy "frame-ancestors 'self'"
+			X-Content-Type-Options nosniff
+			Referrer-Policy strict-origin-when-cross-origin
+		}
+		root * /srv/site
+		try_files {path} {path}/
+		file_server
+	}
+}

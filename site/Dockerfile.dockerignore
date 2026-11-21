@@ -1,0 +1,35 @@
+# Per-Dockerfile ignore for site/Dockerfile (BuildKit convention), used
+# because the root .dockerignore excludes docs/ and *.md for the node image.
+# Paths are relative to the build context (the repository root).
+.git
+.dart_tool
+**/.dart_tool
+build
+**/build
+site/node_modules
+site/dist
+site/.astro
+
+.tina/
+.agents/
+.codex/
+.aws/
+.env*
+!.env.example
+.dev.vars*
+!.dev.vars.example
+node.json
+oauth-client-jwks.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.db
+*.db-*
+*.sqlite*
+
+# Generated site assets are rebuilt in the container.
+site/public/demo/
+site/public/worlddemo/
+site/public/llms.txt
+site/public/llms-full.txt

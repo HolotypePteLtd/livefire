@@ -1,0 +1,275 @@
+---
+// World demo — a CLIENT frame (/world/client/?c=<session>&bot=1|0): a
+// three.js scene (three vendored via npm, bundled by the site build — no
+// CDN at runtime) joined to the wasm server frame over BroadcastChannel,
+// speaking the documented any-language wire contract: join handshake,
+// input at ~12 Hz, acks, baseline + delta snapshots. It never sets a
+// position locally — every position comes from the server's snapshots and
+// is interpolated toward (lerp), which is the honest way to show
+// server-authoritative movement.
+//
+// ?bot=1 replaces the keyboard with a small wandering script: this frame
+// is the second "player", a red avatar, with no human input.
+import '../../styles/world.css';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Openfire world demo — client</title>
+    <meta name="robots" content="noindex" />
+  </head>
+  <body class="world-frame-body">
+    <p class="world-label" id="world-role">client</p>
+    <p id="world-status">connecting…</p>
+    <p class="world-hint" id="world-hint" hidden>click the scene, then WASD / arrows (shift = run)</p>
+    <canvas id="world-canvas" tabindex="0"></canvas>
+    <script>
+      import * as THREE from 'three';
+      // ---- Role and channel -------------------------------------------------
+      const params = new URLSearchParams(location.search);
+      const session = params.get('c') ?? '';
+      const isBot = params.get('bot') === '1';
+      const playerName = isBot ? 'Bot' : params.get('n') || 'You';
+      document.getElementById('world-role').textContent = isBot
+        ? 'client · scripted bot (red)'
+        : 'client · your avatar (blue)';
+      const status = (text) => { document.getElementById('world-status').textContent = text; };
+      if (!session) { status('missing ?c= session id'); }
+
+      // ---- Scene ------------------------------------------------------------
+      const canvas = document.getElementById('world-canvas');
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setSize(innerWidth, innerHeight, false);
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color('#0b0620');
+      scene.fog = new THREE.Fog('#0b0620', 40, 90);
+      const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
+      camera.position.set(0, 26, 30);
+      camera.lookAt(0, 0, 0);
+
+      const halfExtent = 18; // mirrors the authority's default; the baseline carries the real value
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(halfExtent * 2, halfExtent * 2),
+        new THREE.MeshStandardMaterial({ color: '#150b30', roughness: 1 }),
+      );
+      ground.rotation.x = -Math.PI / 2;
+      scene.add(ground);
+      scene.add(new THREE.GridHelper(halfExtent * 2, 18, 0x39ff14, 0x2e1a54));
+      const bounds = new THREE.LineLoop(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(-halfExtent, 0.05, -halfExtent),
+          new THREE.Vector3(halfExtent, 0.05, -halfExtent),
+          new THREE.Vector3(halfExtent, 0.05, halfExtent),
+          new THREE.Vector3(-halfExtent, 0.05, halfExtent),
+        ]),
+        new THREE.LineBasicMaterial({ color: 0x39ff14 }),
+      );
+      scene.add(bounds);
+      scene.add(new THREE.HemisphereLight(0xbfaef0, 0x1a0f38, 1.4));
+      const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+      sun.position.set(8, 20, 10);
+      scene.add(sun);
+
+      const avatarFor = (name) => (name === 'Bot' ? 0xff5a5a : 0x4f9dff);
+      const meshes = new Map(); // peerId -> {group, target, yaw}
+      function ensureAvatar(id, name) {
+        if (meshes.has(id)) return meshes.get(id);
+        const group = new THREE.Group();
+        const body = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.4, 1.0, 4, 12),
+          new THREE.MeshStandardMaterial({ color: avatarFor(name), roughness: 0.5 }),
+        );
+        body.position.y = 0.9;
+        group.add(body);
+        // Name label: a canvas sprite above the head.
+        const tex = nameTexture(name);
+        const label = new THREE.Sprite(
+          new THREE.SpriteMaterial({ map: tex, depthTest: false }),
+        );
+        label.scale.set(2.4, 0.6, 1);
+        label.position.y = 2.3;
+        group.add(label);
+        scene.add(group);
+        const entry = { group, target: new THREE.Vector3(), yaw: 0 };
+        meshes.set(id, entry);
+        return entry;
+      }
+      function nameTexture(name) {
+        const c = document.createElement('canvas');
+        c.width = 256; c.height = 64;
+        const g = c.getContext('2d');
+        g.fillStyle = 'rgba(11,6,32,0.75)';
+        g.fillRect(0, 0, 256, 64);
+        g.font = '600 34px system-ui, sans-serif';
+        g.fillStyle = '#fff';
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.fillText(name, 128, 34);
+        const t = new THREE.CanvasTexture(c);
+        t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+      }
+
+      function resize() {
+        renderer.setSize(innerWidth, innerHeight, false);
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+      }
+      addEventListener('resize', resize);
+      // The parent page sizes this iframe with viewport-capped CSS, so it
+      // can resize without a window resize event inside the frame — watch
+      // the body too. (setSize uses updateStyle=false; the canvas is sized
+      // by CSS, so this cannot feed back into a loop.)
+      if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(() => resize()).observe(document.body);
+      }
+      resize();
+
+      // ---- Wire client (the documented any-language contract) ----------------
+      const selfId = 'c' + Math.random().toString(36).slice(2, 10);
+      const bus = new BroadcastChannel('openfire-world-' + session);
+      const send = (frame) =>
+        bus.postMessage(JSON.stringify({ v: 1, from: selfId, to: 'server', d: JSON.stringify(frame) }));
+      const ack = (tick) => send({ type: 'ack', ack: tick });
+
+      let myId = null;
+      let state = { players: {}, room: {}, tick: 0, epoch: 0 }; // replicated room state
+      let baseTick = -1;
+
+      function applyPatch(base, patch) {
+        const result = { ...base };
+        for (const k of patch.remove ?? []) delete result[k];
+        for (const [k, v] of Object.entries(patch.set ?? {})) {
+          result[k] = v && typeof v === 'object' && v.patch
+            ? applyPatch(base[k] ?? {}, v.patch)
+            : v;
+        }
+        return result;
+      }
+
+      function handleFrame(msg) {
+        if (msg.type === 'welcome') {
+          myId = msg.id;
+          status(`in the room as ${msg.id} (${playerName})`);
+          return;
+        }
+        if (msg.type === 'baseline' || msg.type === 'snapshot') {
+          state = { players: msg.players ?? {}, room: msg.room ?? {}, tick: msg.tick, epoch: msg.epoch };
+          if (msg.type === 'baseline' || msg.initial !== true) baseTick = msg.tick;
+          ack(msg.tick);
+          return;
+        }
+        if (msg.type === 'state') {
+          if (msg.base === baseTick && msg.epoch === state.epoch) {
+            state = applyPatch(state, msg.delta);
+            ack(msg.tick);
+          }
+          // A mismatched delta is dropped, never buffered — the next
+          // baseline repairs. That is the protocol's design.
+          return;
+        }
+        if (msg.type === 'error') status('error: ' + msg.message);
+      }
+
+      bus.onmessage = (ev) => {
+        let env;
+        try { env = JSON.parse(ev.data); } catch { return; }
+        if (env.v !== 1 || env.to !== selfId) return;
+        if (env.hi) {
+          clearInterval(helloTimer);
+          send({ type: 'join', protocol: 1, name: playerName });
+          return;
+        }
+        if (env.bye != null) { status('server closed the connection'); return; }
+        if (env.d) {
+          let frame;
+          try { frame = JSON.parse(env.d); } catch { return; }
+          handleFrame(frame);
+        }
+      };
+      // Hello retry until the server frame answers (the bus drops
+      // messages sent before both sides subscribe).
+      function postHello() {
+        bus.postMessage(JSON.stringify({ v: 1, from: selfId, to: 'server', hello: true }));
+      }
+      const helloTimer = setInterval(postHello, 150);
+      postHello();
+      addEventListener('beforeunload', () => {
+        bus.postMessage(JSON.stringify({ v: 1, from: selfId, to: 'server', bye: 1000 }));
+      });
+
+      // ---- Input -------------------------------------------------------------
+      const keys = new Set();
+      let botHeading = Math.random() * Math.PI * 2;
+      let botRun = false;
+      let nextBotTurn = performance.now() + 2000;
+      if (!isBot) {
+        const hint = document.getElementById('world-hint');
+        hint.hidden = false;
+        canvas.addEventListener('keydown', (e) => {
+          keys.add(e.key.toLowerCase());
+          hint.hidden = true;
+          if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase())) e.preventDefault();
+        });
+        canvas.addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
+      }
+      function currentInput(now) {
+        if (!isBot) {
+          const x = (keys.has('d') || keys.has('arrowright') ? 1 : 0) - (keys.has('a') || keys.has('arrowleft') ? 1 : 0);
+          const z = (keys.has('s') || keys.has('arrowdown') ? 1 : 0) - (keys.has('w') || keys.has('arrowup') ? 1 : 0);
+          return { moveX: x, moveZ: z, run: keys.has('shift') };
+        }
+        if (now > nextBotTurn) {
+          botHeading = Math.random() * Math.PI * 2;
+          botRun = Math.random() < 0.35;
+          nextBotTurn = now + 1800 + Math.random() * 2400;
+        }
+        // Steer back toward the centre when close to the bounds.
+        const me = myId && state.players[myId];
+        if (me) {
+          const r = Math.hypot(me.x, me.z);
+          if (r > halfExtent * 0.8) botHeading = Math.atan2(-me.z, -me.x);
+        }
+        return { moveX: Math.cos(botHeading), moveZ: Math.sin(botHeading), run: botRun };
+      }
+      // Inputs are requests at ~12 Hz; the server owns the speeds.
+      setInterval(() => {
+        if (!myId) return;
+        send({ type: 'input', ...currentInput(performance.now()) });
+      }, 80);
+
+      // ---- Render loop: interpolate toward replicated positions --------------
+      let last = performance.now();
+      function frame(now) {
+        const dt = Math.min((now - last) / 1000, 0.1);
+        last = now;
+        const seen = new Set();
+        for (const [id, row] of Object.entries(state.players ?? {})) {
+          seen.add(id);
+          const entry = ensureAvatar(id, row.name ?? id);
+          entry.target.set(row.x ?? 0, 0, row.z ?? 0);
+          entry.yaw = row.yaw ?? 0;
+        }
+        for (const [id, entry] of meshes) {
+          if (!seen.has(id)) {
+            scene.remove(entry.group);
+            meshes.delete(id);
+            continue;
+          }
+          const k = 1 - Math.exp(-10 * dt); // smooth approach, no local prediction
+          entry.group.position.x += (entry.target.x - entry.group.position.x) * k;
+          entry.group.position.z += (entry.target.z - entry.group.position.z) * k;
+          // Shortest-arc yaw.
+          const d = entry.yaw - entry.group.rotation.y;
+          entry.group.rotation.y += Math.atan2(Math.sin(d), Math.cos(d)) * k;
+        }
+        renderer.render(scene, camera);
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    </script>
+  </body>
+</html>

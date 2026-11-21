@@ -1,0 +1,29 @@
+{
+  "name": "rooms-sdk-site",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "check": "astro check",
+    "gen": "node scripts/gen-agent-files.mjs",
+    "spec:check": "node scripts/check-spec.mjs",
+    "build": "node scripts/build-demo.mjs && node scripts/build-world-demo.mjs && node scripts/gen-agent-files.mjs && node scripts/check-spec.mjs && astro build",
+    "preview": "astro preview",
+    "deploy:cloudflare": "npm run build && wrangler pages deploy --commit-dirty=true"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.36.3",
+    "astro": "5.18.2",
+    "three": "^0.180.0"
+  },
+  "engines": {
+    "node": ">=22.0.0 <27.0.0"
+  },
+  "volta": {
+    "node": "24.19.0"
+  }
+}

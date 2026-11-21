@@ -1,0 +1,10 @@
+# Cloudflare Pages response headers (Astro copies public/ verbatim into
+# dist/, and Pages reads _headers from the output directory).
+# Clickjacking hardening: only same-origin framing is allowed — the world
+# demo's iframes are same-origin, so they keep working. Mirrors the header
+# block in deploy/Caddyfile for the compose/Caddy deployment path.
+/*
+  X-Frame-Options: SAMEORIGIN
+  Content-Security-Policy: frame-ancestors 'self'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

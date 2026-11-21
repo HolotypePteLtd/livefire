@@ -1,0 +1,36 @@
+---
+title: Rooms server HTTP API
+description: The server's HTTP API reference — endpoints, auth, join tokens and error shapes.
+---
+
+> You only need this section if you want the details. For the walkthrough,
+> see [Instant multiplayer server](/docs/multiplayer-server/); for the
+> mental model, [how it works](/docs/how-it-works/).
+
+
+import { Content as ApiDoc } from '../../../../../docs/control_plane_api.md';
+
+This API manages rooms on the server: create rooms, issue one-time join
+tokens, look rooms up, shut them down. One **service key** per deployment,
+sent as `Authorization: Bearer <service key>`.
+
+Base URL: `https://play.holotype.com.sg` on the hosted node (live in
+preview — API key on request; self-serve signup is not live yet), or your
+own node's origin when self-hosting. The endpoints behave identically.
+
+The endpoints at a glance:
+
+| Method & path | Purpose |
+| --- | --- |
+| `POST /v1/rooms` | create a room (template + config) → room URL + one-time join token |
+| `POST /v1/rooms/:id/tokens` | issue an additional one-time join token |
+| `GET /v1/rooms/:id` | room lookup (status, peers, pinned config) |
+| `GET /v1/rooms?limit=&cursor=` | cursor-paginated room list |
+| `DELETE /v1/rooms/:id` | drain: peers get WebSocket close 1001, may not resume |
+
+<ApiDoc />
+
+---
+*Generated from `docs/control_plane_api.md` (embedded above via markdown
+import), including its implementation notes for the self-hosted server's
+v0 deviations.*

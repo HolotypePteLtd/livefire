@@ -1,0 +1,151 @@
+/* Starlight theme: forged ember — near-black cool surfaces, ember-amber
+   primary, cyan secondary; restrained, professional game-backend feel
+   (shared with the landing page). Body text stays near-white; amber and
+   cyan are used for links, accents and code furniture only.
+   Both the light and dark Starlight scopes get the same dark values, so
+   the site is dark-only like the landing page (the theme toggle has no
+   visible effect and is hidden). */
+:root,
+:host,
+[data-theme='dark'],
+[data-theme='light'] {
+  /* Base surfaces */
+  --sl-color-white: #edf1f7; /* lightest: body text */
+  --sl-color-black: #0b0d12; /* darkest: page background */
+  --sl-color-bg: #0b0d12;
+  --sl-color-bg-nav: #0b0d12;
+  --sl-color-bg-sidebar: #12151d;
+  --sl-color-bg-accent: #f5a54a;
+  --sl-color-bg-badge: #12151d;
+  --sl-color-bg-inline-code: #12151d;
+
+  /* Gray ramp, dark mode: 1 = text side, 7 = surface side */
+  --sl-color-gray-1: #edf1f7;
+  --sl-color-gray-2: #d6dce8;
+  --sl-color-gray-3: #97a1b5; /* cool slate: secondary text */
+  --sl-color-gray-4: #74809a; /* >=4.5:1 on page bg for small text */
+  --sl-color-gray-5: #4a5468;
+  --sl-color-gray-6: #242b3a; /* thin borders */
+  --sl-color-gray-7: #12151d; /* panels */
+
+  --sl-color-border: #242b3a;
+  --sl-color-hairline: #242b3a;
+  --sl-color-hairline-light: #303950;
+  --sl-color-hairline-shade: #0b0d12;
+
+  /* Accents */
+  --sl-color-accent: #f5a54a; /* ember amber */
+  --sl-color-accent-high: #ffc981;
+  --sl-color-accent-low: #241b10;
+  --sl-color-text: #edf1f7;
+  --sl-color-text-accent: #f5a54a;
+  --sl-color-text-invert: #221204;
+  --sl-color-heading: #edf1f7;
+
+  --sl-color-asides-border: #242b3a;
+  --sl-color-asides-text-accent: #97a1b5;
+  --sl-color-border-badge: #242b3a;
+  --sl-color-backdrop-overlay: rgb(5 7 10 / 0.75);
+
+  /* Expressive-code blocks: near-black cool panels, near-white code text.
+     !important: the EC stylesheet ships as a separate chunk that loads
+     AFTER this one on code-heavy pages, with same-specificity :root
+     definitions — without this, its slate-gray defaults would win there. */
+  --ec-codeBg: #12151d !important;
+  --ec-codeFg: #edf1f7 !important;
+  --ec-codeSelBg: #2a3247 !important;
+  --ec-brdCol: #242b3a !important;
+  --ec-gtrFg: #74809a !important;
+  --ec-gtrBrdCol: #242b3a66 !important;
+  --ec-focusBrd: #f5a54a !important;
+  --ec-frm-edBg: #0b0d12 !important;
+  --ec-frm-edTabBarBg: #0b0d12 !important;
+  --ec-frm-edActTabBg: #12151d !important;
+  --ec-frm-edActTabFg: #edf1f7 !important;
+  --ec-frm-edActTabIndBtmCol: #f5a54a !important;
+  --ec-frm-inlBtnBg: #12151d !important;
+  --ec-frm-copyIcon: #97a1b5 !important;
+}
+
+/* Restrained accents: no glows on titles or headings; link hovers shift
+   to the cool cyan secondary. Body text is untouched. */
+main a:hover,
+aside a:hover {
+  color: #57c8de;
+}
+
+::selection {
+  background: #f5a54a;
+  color: #221204;
+}
+
+/* On-theme scrollbars (Starlight's default thumb is near-white). */
+html {
+  scrollbar-color: #303950 #0b0d12;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0b0d12;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #303950;
+  border-radius: 6px;
+  border: 2px solid #0b0d12;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4a5468;
+}
+
+/* Dark-only site: hide the (now no-op) light/dark toggle. */
+.toggle {
+  display: none;
+}
+
+/* World demo section (multiplayer-server): 3-frame grid that the
+ * orchestrator fills when the section scrolls into view; the frames
+ * themselves load their own styles (world.css). Layout goal: the slim
+ * server strip plus both side-by-side client views — and the section
+ * intro above them — fit on roughly one screen, no page scrolling. */
+.world-demo-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr; /* clients side by side on desktop */
+  margin: 0.5rem 0 1rem;
+}
+
+/* Placeholder height until the frames spawn, so the grid scrolls into
+ * view as a visible block and the layout does not jump. */
+.world-demo-grid:empty {
+  min-height: 96px;
+}
+
+.world-demo-grid iframe {
+  width: 100%;
+  /* Viewport-capped so the section fits one screen on any display;
+   * each frame's three.js resize handler re-fixes camera aspect when
+   * this height changes. */
+  height: min(38vh, 280px);
+  border: 1px solid #242b3a;
+  border-radius: 10px;
+  background: #12151d;
+}
+
+.world-demo-grid iframe.world-server {
+  grid-column: 1 / -1;
+  /* Slim status strip: it only shows the label + tick line. */
+  height: 56px;
+}
+
+/* Stack the two client views only on narrow/mobile widths. */
+@media (max-width: 720px) {
+  .world-demo-grid {
+    grid-template-columns: 1fr;
+  }
+}

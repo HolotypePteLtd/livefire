@@ -1,0 +1,1029 @@
+---
+// Landing / marketing page at `/` — plain Astro, served alongside the
+// Starlight docs. The stylesheet must be imported here so Astro bundles it;
+// a raw /src/styles/... link would point outside the built output and 404.
+// Art direction: "forged ember" — near-black cool surfaces, ember-amber
+// primary accent, cyan secondary. Game-backend feel: HUD readouts, room
+// topology, terminal windows, loadout cards — restrained, not neon.
+import '../styles/landing.css';
+
+const repo = 'https://github.com/HolotypePteLtd/openfire';
+
+// Inline icon set — stroke inherits currentColor; cards tint it via the
+// tier classes. Kept tiny and geometric to match the HUD aesthetic.
+const icons: Record<string, string> = {
+  identity: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg>`,
+  chat: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5z"/><path d="M8 9.5h8M8 12.5h5"/></svg>`,
+  physics: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>`,
+  globe: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.8 2.3 4.2 5.2 4.2 8.5s-1.4 6.2-4.2 8.5c-2.8-2.3-4.2-5.2-4.2-8.5s1.4-6.2 4.2-8.5z"/></svg>`,
+  server: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/><path d="M7.5 7.5h.01M7.5 16.5h.01M11 7.5h2M11 16.5h2"/></svg>`,
+  signal: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18v-4M9 18v-7M14 18V8M19 18V4"/><path d="M3 21h18"/></svg>`,
+  social: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="9" r="2.8"/><circle cx="16.5" cy="10.5" r="2.2"/><path d="M3.5 19c.6-2.9 2.4-4.5 4.5-4.5s3.9 1.6 4.5 4.5M13.6 18.5c.5-2.2 1.6-3.4 2.9-3.4 1.4 0 2.6 1.2 3 3.4"/></svg>`,
+  coop: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="9" rx="4.5"/><path d="M8 11v3M6.5 12.5h3M15.5 11.5h.01M18 13.5h.01"/></svg>`,
+  physicsGame: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18M5 20v-6l5-4 4 3 5-6"/><circle cx="19" cy="7" r="1.6"/></svg>`,
+  bolt: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3L5 13.5h5L10 21l8-10.5h-5L13 3z"/></svg>`,
+  arrow: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>`,
+  copy: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M5 15V5h10"/></svg>`,
+  check: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`,
+  github: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a9.5 9.5 0 0 0-3 18.5c.5.1.7-.2.7-.5v-1.7c-2.6.6-3.2-1.2-3.2-1.2-.4-1.1-1-1.4-1-1.4-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.3-1.1.6-1.3-2.1-.2-4.3-1-4.3-4.7 0-1 .4-1.9 1-2.5-.1-.3-.4-1.3.1-2.6 0 0 .8-.3 2.6 1a9 9 0 0 1 4.8 0c1.8-1.3 2.6-1 2.6-1 .5 1.3.2 2.3.1 2.6.6.6 1 1.5 1 2.5 0 3.7-2.2 4.5-4.3 4.7.3.3.6.8.6 1.7v2.6c0 .3.2.6.7.5A9.5 9.5 0 0 0 12 2.5z"/></svg>`,
+  menu: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>`,
+  close: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
+};
+
+const features = [
+  {
+    icon: 'identity',
+    tier: 'cyan',
+    title: 'Real accounts via Bluesky',
+    body: 'Players can sign in with their Bluesky account: real display name and avatar on the player list, and bans that stick to the account — not the nickname. Guest play stays the default.',
+  },
+  {
+    icon: 'chat',
+    tier: 'cyan',
+    title: 'Chat and moderation built in',
+    body: 'Every room ships chat: player names, history for late joiners, and host controls for mute, kick, ban and lock. Length and rate limits are enforced by the server.',
+  },
+  {
+    icon: 'physics',
+    tier: 'ember',
+    title: 'Physics rooms without code',
+    body: 'Describe the world in a settings file — floors, walls, hills, speeds, jump. The server decides: it runs the simulation and clamps every input, so speed hacks and teleports do nothing.',
+  },
+  {
+    icon: 'globe',
+    tier: 'ember',
+    title: 'Works from any language',
+    body: 'Rooms speak a WebSocket + JSON protocol, published as data. Any client that can open a WebSocket can play, chat and share state — integrate from any engine or language.',
+  },
+  {
+    icon: 'server',
+    tier: 'ember',
+    title: 'Self-host in one command',
+    body: 'docker compose up -d brings up the rooms server, HTTPS and the docs site on your own domain. Your machine, your database, your rules.',
+  },
+  {
+    icon: 'signal',
+    tier: 'cyan',
+    title: 'Players survive bad wifi',
+    body: 'Drop the connection and rejoin within 15 seconds as the same player — same id, same score, same chat history. The client library handles it.',
+  },
+];
+
+const stats = [
+  { value: '240', unit: 'Hz', label: 'server simulation ceiling' },
+  { value: '15', unit: 's', label: 'reconnect grace window' },
+  { value: '1', unit: 'cmd', label: 'to self-host everything' },
+  { value: '∞', unit: '', label: 'client languages — open spec' },
+];
+
+const steps = [
+  {
+    n: '01',
+    title: 'Write your rules',
+    body: 'One class decides what is true in your room — or skip code entirely and configure a shared-state or physics room from a settings file.',
+    href: '/docs/multiplayer-server/#2-make-it-yours',
+  },
+  {
+    n: '02',
+    title: 'Run the server',
+    body: 'One command puts the rooms server, HTTPS and these docs on your domain — or embed the room inside your own game process, or skip the server entirely and use the hosted node (preview).',
+    href: '/docs/multiplayer-server/#4-put-the-server-on-the-internet',
+  },
+  {
+    n: '03',
+    title: 'Connect players',
+    body: 'Create rooms over the HTTP API, hand out one-time join tokens, and chat plus shared state come built in.',
+    href: '/docs/multiplayer-server/#5-create-a-room-and-invite-players',
+  },
+];
+
+const useCases = [
+  {
+    icon: 'social',
+    title: 'Social hangout spaces',
+    tag: 'shared-state',
+    body: 'Chat with history for people who arrive late, a player list with real Bluesky names and avatars, and host buttons for mute, kick, ban and lock.',
+  },
+  {
+    icon: 'coop',
+    title: 'Co-op and casual games',
+    tag: 'shared-state',
+    body: 'Shared state rooms keep every player’s score, pose and emote in view. Each player owns their values; the host owns the game phase. The players decide — a modified client can claim anything, which is fine for casual play and nearly free to host.',
+  },
+  {
+    icon: 'physicsGame',
+    title: 'Physics games',
+    tag: 'authoritative',
+    body: 'Walk, run and jump in a world you describe. The server decides: it computes every position up to 240 steps per second from the buttons players press, so a modified client can at most walk — cheat-proof movement for competitive games.',
+  },
+  {
+    icon: 'bolt',
+    title: 'Quick prototypes',
+    tag: 'in-process',
+    body: 'The demo game is about 130 lines and runs in one command on localhost — no server, no account, no networking code.',
+  },
+];
+
+const tiers = [
+  {
+    name: 'Open Source',
+    price: 'Free',
+    tag: 'self-host',
+    body: 'Everything in this repository, on your own server: the rooms server, shared-state and physics rooms, chat and moderation, Bluesky sign-in, clients from any language.',
+    cta: { label: 'Get started', href: '/docs/multiplayer-server/' },
+    note: 'MIT license',
+    comingSoon: false,
+  },
+  {
+    name: 'Hosted Starter',
+    price: '—',
+    tag: 'managed rooms',
+    body: 'The same rooms server, run by us at play.holotype.com.sg: create rooms over the same HTTP API without running anything.',
+    cta: { label: 'Hosted path', href: '/docs/multiplayer-server/#the-hosted-node-preview-rooms-without-a-server' },
+    note: 'Live in preview — API key on request; billing not live yet',
+    badge: 'Live in preview',
+    comingSoon: false,
+  },
+  {
+    name: 'Hosted Pro',
+    price: '—',
+    tag: 'live games',
+    body: 'More rooms and more capacity for games with an audience.',
+    comingSoon: true,
+  },
+];
+
+const faqs = [
+  {
+    q: 'What license is Openfire under?',
+    a: 'MIT. The whole repository — server, room types, SDK and docs — is free to use, modify and self-host.',
+  },
+  {
+    q: 'Which languages can my players use?',
+    a: 'Any language that can open a WebSocket and send JSON: the wire protocol is published as data (rooms-protocol.json), so whatever your game is written in, it can join a room.',
+  },
+  {
+    q: 'Do I need a specific game engine or language?',
+    a: 'No. Shared-state and physics rooms are configured with settings files and work from any client that speaks the open protocol. Whatever engine or language your game uses, it integrates directly from the published spec.',
+  },
+  {
+    q: 'Is there a hosted service, or self-host only?',
+    a: 'Both. A hosted node is live in preview at play.holotype.com.sg — the same server software and the same API; API keys are issued on request while self-serve signup and billing are still being built. And the whole server remains self-hostable under the MIT license in this repository.',
+  },
+  {
+    q: 'What happens when the server restarts?',
+    a: 'Rooms are recreated from their saved settings on the next join, and join tokens already issued keep working. In-memory game state (scores, positions) does not survive a restart — each room starts fresh.',
+  },
+  {
+    q: 'Is player data stored?',
+    a: 'The server keeps room settings, join-token use and API keys in a small SQLite database. Game state lives in memory. With Bluesky sign-in enabled, public profiles (display name, avatar) are cached server-side; guest play stores no profiles.',
+  },
+  {
+    q: 'Can players cheat?',
+    a: 'That is the difference between the two room types. Shared-state rooms: the players decide — each player publishes their own values and a modified client can claim anything, so use them for casual play; they are nearly free to host. Physics rooms: the server decides — players send only button presses and the server runs the simulation, so cheating gets nothing; it costs CPU per room and is the one to use for anything competitive.',
+  },
+  {
+    q: 'How is this different from my own WebSocket server?',
+    a: 'A raw WebSocket forwards what clients send. Openfire rooms are server-authoritative: the server runs your rules, sends every player the same state (a full picture about once a second plus small updates that repair themselves), reconnects dropped players for 15 seconds, and enforces chat and moderation limits. You write the game; the networking is done.',
+  },
+];
+
+const docsLinks = [
+  ['Overview', '/docs/'],
+  ['Instant multiplayer server', '/docs/multiplayer-server/'],
+  ['Shared state rooms', '/docs/shared-state-rooms/'],
+  ['Physics rooms', '/docs/physics-rooms/'],
+  ['Player accounts', '/docs/accounts/'],
+  ['Self-hosting', '/docs/self-hosting/'],
+];
+
+// Integration snippets for the "From zero to live" section. Each is the
+// real API, compressed to the smallest thing that actually works; the
+// room code below is executed verbatim as part of this site's checks,
+// and both config blocks are parsed by the node's own config loader.
+const esc = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// Minimal build-time syntax tint for the landing snippets (comments,
+// strings, a few keywords) — a character scanner, not a highlighter
+// dependency. `//` starts a comment unless it is part of a URI (`://`).
+const hl = (src: string): string => {
+  let out = '';
+  let i = 0;
+  const n = src.length;
+  const kw = /\b(import|from|const|await|true|false|new)\b/g;
+  const plain = (s: string) =>
+    esc(s).replace(kw, '<span class="tok-k">$1</span>');
+  while (i < n) {
+    const ch = src[i];
+    if (ch === "'" || ch === '"') {
+      let j = i + 1;
+      while (j < n && src[j] !== ch) {
+        if (src[j] === '\\') j++;
+        if (src[j] === '\n') break; // unterminated: stop at EOL
+        j++;
+      }
+      const end = Math.min(j + 1, n);
+      out += `<span class="tok-s">${esc(src.slice(i, end))}</span>`;
+      i = end;
+    } else if (ch === '/' && src[i + 1] === '/' && src[i - 1] !== ':') {
+      let j = src.indexOf('\n', i);
+      if (j === -1) j = n;
+      out += `<span class="tok-c">${esc(src.slice(i, j))}</span>`;
+      i = j;
+    } else {
+      let j = i;
+      while (j < n) {
+        const c = src[j];
+        if (c === "'" || c === '"') break;
+        if (c === '/' && src[j + 1] === '/' && src[j - 1] !== ':') break;
+        j++;
+      }
+      out += plain(src.slice(i, j));
+      i = j;
+    }
+  }
+  return out;
+};
+
+const snippetMultiplayer = `import { Openfire } from 'openfire-sdk';
+
+const game = await Openfire.join({
+  host: 'https://play.holotype.com.sg', // hosted node (preview)
+  roomKey,                              // from POST /v1/rooms
+  joinToken,                            // one-time, from the API
+  name: 'Sam',
+});
+
+game.chat.send('hello!');               // chat, built in
+game.onState((state) => render(state)); // server-decided state
+game.command({ type: 'increment' });    // your room's rules decide
+
+// self-host instead: host: 'http://localhost:8790' — same SDK,
+// your node, one docker command.`;
+
+const snippetSignin = `"auth": {
+  "providers": ["guest", "atproto"],
+  "atproto": {
+    "clientName": "your game name",
+    "entrywayUrl": "https://bsky.social",
+    "plcDirectoryUrl": "https://plc.directory",
+    "jwksPath": "/etc/rooms/oauth-client-jwks.json"
+  }
+}`;
+
+const snippetEventsConfig = `"publishEvents": {
+  "enabled": true,
+  "gameId": "com.yourgame",
+  "summaryOnly": false
+}`;
+
+const snippetEventsRecord = `// the public record that lands in the player's own repo:
+at://did:plc:x4y…/com.openfire.matchEvent/3kh5t…`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Openfire — a multiplayer server for your game</title>
+    <meta
+      name="description"
+      content="Open source multiplayer server: chat, shared-state and physics rooms from a settings file. Self-host with one command; players connect from any language."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script is:inline>
+      // Set before first paint so reveal-on-scroll never flashes hidden
+      // content when JS is off or fails: the CSS only hides .reveal when
+      // this class is present.
+      document.documentElement.classList.add('js');
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="top" id="top">
+      <div class="wrap bar">
+        <a class="logo" href="/" aria-label="Openfire home">
+          <span class="logo-mark" aria-hidden="true"></span>
+          Open<span class="accent">fire</span>
+        </a>
+        <button
+          class="menu-toggle"
+          aria-expanded="false"
+          aria-controls="site-nav"
+          aria-label="Toggle menu"
+        >
+          <span class="mi mi-menu" set:html={icons.menu} />
+          <span class="mi mi-close" set:html={icons.close} />
+        </button>
+        <nav id="site-nav" aria-label="Main">
+          <a href="#features" data-spy>Features</a>
+          <a href="#code" data-spy>Integrate</a>
+          <a href="#how" data-spy>How it works</a>
+          <a href="#pricing" data-spy>Pricing</a>
+          <a href="#faq" data-spy>FAQ</a>
+          <a href="/docs/">Docs</a>
+          <a class="gh" href={repo}>
+            <span class="mi" set:html={icons.github} />GitHub
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero wrap" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">
+            <span class="pulse-dot" aria-hidden="true"></span>
+            open-source · server-authoritative · self-host or hosted
+          </p>
+          <h1 id="hero-title">
+            Give your game a<br />
+            <span class="ember">multiplayer server.</span>
+          </h1>
+          <p class="pitch">
+            Openfire is an open-source multiplayer server: chat, shared-state
+            and physics rooms for your game. Run it yourself with one
+            command, or use the hosted node — live in preview. Players
+            connect from any language.
+          </p>
+          <p class="cta">
+            <a class="button primary" href="/docs/multiplayer-server/">
+              Get started
+              <span class="mi" set:html={icons.arrow} />
+            </a>
+            <a class="button" href="/docs/multiplayer-server/#watch-two-players-share-one-world"
+              >Try the live demo</a
+            >
+            <a class="button ghost" href={repo}>
+              <span class="mi" set:html={icons.github} />Star on GitHub
+            </a>
+          </p>
+          <p class="hero-terminal" aria-label="One command to self-host">
+            <span class="prompt" aria-hidden="true">$</span>
+            <code>docker compose up -d</code>
+            <button class="copy" data-copy="docker compose up -d" aria-label="Copy command">
+              <span class="mi mi-copy" set:html={icons.copy} />
+              <span class="mi mi-done" set:html={icons.check} />
+            </button>
+          </p>
+        </div>
+
+        <div class="hero-stage reveal">
+          <div class="hud" role="img"
+            aria-label="Animated diagram: an authoritative room server exchanging snapshots and commands with three player clients">
+            <div class="hud-head">
+              <span class="hud-title">room · demo-room</span>
+              <span class="hud-status"><span class="pulse-dot" aria-hidden="true"></span>live</span>
+            </div>
+            <canvas class="hud-canvas" aria-hidden="true"></canvas>
+            <div class="hud-foot" aria-hidden="true">
+              <span>tick <b data-hud-tick>0</b></span>
+              <span>peers <b>3</b></span>
+              <span>snapshot <b>15 Hz</b></span>
+              <span>sim <b>60 Hz</b></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats wrap" aria-label="Key numbers">
+        <div class="stat-grid reveal">
+          {
+            stats.map((s) => (
+              <div class="stat">
+                <span class="stat-value">
+                  {s.value}
+                  {s.unit && <span class="stat-unit">{s.unit}</span>}
+                </span>
+                <span class="stat-label">{s.label}</span>
+              </div>
+            ))
+          }
+        </div>
+      </section>
+
+      <section id="features" class="wrap features">
+        <div class="section-head reveal">
+          <p class="kicker">// loadout</p>
+          <h2>What you get</h2>
+          <p class="section-sub">
+            The multiplayer chores — identity, chat, state, physics,
+            reconnects — shipped as one server you own.
+          </p>
+        </div>
+        <div class="grid3 cards">
+          {
+            features.map((f, i) => (
+              <article class={`card tier-${f.tier} reveal`} style={`--d:${i * 60}ms`}>
+                <span class="card-icon" set:html={icons[f.icon]} />
+                <h3>{f.title}</h3>
+                <p>{f.body}</p>
+              </article>
+            ))
+          }
+        </div>
+      </section>
+
+      <section id="code" class="wrap snips">
+        <div class="section-head reveal">
+          <p class="kicker">// integration</p>
+          <h2>From zero to live</h2>
+          <p class="section-sub">
+            The smallest real integration for each capability — the actual
+            API and config keys, nothing invented.
+          </p>
+        </div>
+        <article class="snip reveal">
+          <div class="snip-head">
+            <h3>Multiplayer</h3>
+            <span class="snip-lang">TypeScript · client SDK</span>
+          </div>
+          <p class="snip-note">
+            Client integration in TypeScript. The room's rules run on the
+            server — the walkthrough covers them with the native server SDK.
+            The hosted node is live in preview (API key on request);
+            self-hosting stays one docker command away, same SDK.
+          </p>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="terminal-file">game.ts</span>
+              <button class="copy" data-copy={snippetMultiplayer} aria-label="Copy code">
+                <span class="mi mi-copy" set:html={icons.copy} />
+                <span class="mi mi-done" set:html={icons.check} />
+              </button>
+            </div>
+            <pre><code set:html={hl(snippetMultiplayer)} /></pre>
+          </div>
+        </article>
+        <article class="snip reveal">
+          <div class="snip-head">
+            <h3>Player sign-in with Bluesky</h3>
+            <span class="snip-lang">node config · JSON</span>
+          </div>
+          <p class="snip-note">
+            A node-side setting: one block in the node config and players
+            sign in with their existing account; guest play stays the
+            default. Works from every client language.
+          </p>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="terminal-file">node.json — auth</span>
+              <button class="copy" data-copy={snippetSignin} aria-label="Copy code">
+                <span class="mi mi-copy" set:html={icons.copy} />
+                <span class="mi mi-done" set:html={icons.check} />
+              </button>
+            </div>
+            <pre><code set:html={hl(snippetSignin)} /></pre>
+          </div>
+        </article>
+        <article class="snip reveal">
+          <div class="snip-head">
+            <h3>Achievements &amp; replays</h3>
+            <span class="snip-lang">node config · AT Protocol</span>
+          </div>
+          <p class="snip-note">
+            Also server-side: enable it on the node and the room publishes
+            milestones to the player's own repo — public, theirs, deletable.
+            No client code needed; every client gets it.
+          </p>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="terminal-file">node.json — publishEvents</span>
+              <button class="copy" data-copy={snippetEventsConfig} aria-label="Copy code">
+                <span class="mi mi-copy" set:html={icons.copy} />
+                <span class="mi mi-done" set:html={icons.check} />
+              </button>
+            </div>
+            <pre><code set:html={hl(snippetEventsConfig)} /></pre>
+          </div>
+          <div class="terminal terminal-out">
+            <div class="terminal-bar">
+              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="terminal-file">the record it produces</span>
+              <button class="copy" data-copy={snippetEventsRecord} aria-label="Copy code">
+                <span class="mi mi-copy" set:html={icons.copy} />
+                <span class="mi mi-done" set:html={icons.check} />
+              </button>
+            </div>
+            <pre><code set:html={hl(snippetEventsRecord)} /></pre>
+          </div>
+        </article>
+      </section>
+
+      <section id="how" class="wrap steps">
+        <div class="section-head reveal">
+          <p class="kicker">// main quest</p>
+          <h2>How it works</h2>
+          <p class="section-sub">Three steps between your game and a live room.</p>
+        </div>
+        <ol class="grid3 quest">
+          {
+            steps.map((s, i) => (
+              <li class="reveal" style={`--d:${i * 80}ms`}>
+                <span class="stepnum">{s.n}</span>
+                <h3>
+                  <a href={s.href}>
+                    {s.title}
+                    <span class="mi" set:html={icons.arrow} />
+                  </a>
+                </h3>
+                <p>{s.body}</p>
+              </li>
+            ))
+          }
+        </ol>
+      </section>
+
+      <section id="use-cases" class="wrap">
+        <div class="section-head reveal">
+          <p class="kicker">// game modes</p>
+          <h2>What people build</h2>
+          <p class="section-sub">
+            Two room types cover the spectrum — players decide, or the
+            server decides.
+          </p>
+        </div>
+        <div class="grid2 cards">
+          {
+            useCases.map((u, i) => (
+              <article class={`card mode reveal`} style={`--d:${i * 60}ms`}>
+                <div class="mode-head">
+                  <span class="card-icon" set:html={icons[u.icon]} />
+                  <span class={`mode-tag tag-${u.tag === 'authoritative' ? 'ember' : 'cyan'}`}>{u.tag}</span>
+                </div>
+                <h3>{u.title}</h3>
+                <p>{u.body}</p>
+              </article>
+            ))
+          }
+        </div>
+      </section>
+
+      <section id="pricing" class="wrap pricing">
+        <div class="section-head reveal">
+          <p class="kicker">// editions</p>
+          <h2>Pricing</h2>
+          <p class="section-sub">
+            Self-host free, today. The hosted node is live in preview — API
+            key on request — and paid tiers are still on the roadmap.
+          </p>
+        </div>
+        <div class="grid3 cards">
+          {
+            tiers.map((t, i) => (
+              <article
+                class={`card tier${t.comingSoon ? ' soon' : ' featured'} reveal`}
+                style={`--d:${i * 80}ms`}
+              >
+                <h3>
+                  {t.name} <span class="tag">{t.tag}</span>
+                  {t.comingSoon && <span class="badge">Coming soon</span>}
+                  {t.badge && <span class="badge live">{t.badge}</span>}
+                </h3>
+                <p class="price">{t.price}</p>
+                <p>{t.body}</p>
+                {t.cta && (
+                  <p class="tier-cta">
+                    <a class="button primary" href={t.cta.href}>
+                      {t.cta.label}
+                      <span class="mi" set:html={icons.arrow} />
+                    </a>
+                  </p>
+                )}
+                {t.note && <p class="tier-note">{t.note}</p>}
+              </article>
+            ))
+          }
+        </div>
+        <p class="run reveal">
+          The hosted node runs at
+          <a href="https://play.holotype.com.sg">play.holotype.com.sg</a> —
+          API keys on request while the preview runs; self-serve signup and
+          billing are still coming. The self-hosted server is free today,
+          under the MIT license.
+        </p>
+      </section>
+
+      <section id="faq" class="wrap faq">
+        <div class="section-head reveal">
+          <p class="kicker">// intel</p>
+          <h2>Questions</h2>
+        </div>
+        <div class="reveal">
+          {
+            faqs.map((f) => (
+              <details>
+                <summary>{f.q}</summary>
+                <p>{f.a}</p>
+              </details>
+            ))
+          }
+        </div>
+      </section>
+
+      <section class="wrap">
+        <div class="cta-band reveal">
+          <p class="kicker">// ready player one</p>
+          <h2>Get your game online this afternoon.</h2>
+          <p>
+            Run the demo, point a domain at a server, create your first
+            room — one page, start to finish.
+          </p>
+          <p class="cta">
+            <a class="button primary" href="/docs/multiplayer-server/">
+              Get started
+              <span class="mi" set:html={icons.arrow} />
+            </a>
+            <a class="button" href={repo}>
+              <span class="mi" set:html={icons.github} />Star on GitHub
+            </a>
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="wrap">
+      <div class="footer-cols">
+        <div>
+          <span class="logo">
+            <span class="logo-mark" aria-hidden="true"></span>
+            Open<span class="accent">fire</span>
+          </span>
+          <p class="run">
+            Open-source multiplayer rooms. MIT license ·
+            © 2026 Holotype Pte Ltd.
+          </p>
+        </div>
+        <nav aria-label="Docs">
+          <h4>Docs</h4>
+          {
+            docsLinks.map(([label, href]) => (
+              <a href={href}>{label}</a>
+            ))
+          }
+        </nav>
+        <nav aria-label="Project">
+          <h4>Project</h4>
+          <a href={repo}>GitHub</a>
+          <a href="/docs/protocol/">Wire protocol</a>
+          <a href="/spec/rooms-protocol.json">rooms-protocol.json</a>
+          <a href="/llms.txt">llms.txt</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script>
+      // Landing behaviors — no framework. Everything degrades gracefully:
+      // without JS the page is fully readable, all sections visible, FAQ
+      // native <details>, links native anchors.
+
+      const prefersReduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // --- Sticky header state -------------------------------------------------
+      const top = document.querySelector<HTMLElement>('.top')!;
+      const onScroll = () => top.classList.toggle('scrolled', scrollY > 8);
+      addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      // --- Mobile menu ---------------------------------------------------------
+      const toggle = document.querySelector<HTMLButtonElement>('.menu-toggle')!;
+      const nav = document.getElementById('site-nav')!;
+      const setMenu = (open: boolean) => {
+        toggle.setAttribute('aria-expanded', String(open));
+        nav.classList.toggle('open', open);
+        document.body.classList.toggle('menu-open', open);
+      };
+      toggle.addEventListener('click', () =>
+        setMenu(toggle.getAttribute('aria-expanded') !== 'true'),
+      );
+      nav.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('a')) setMenu(false);
+      });
+      addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') setMenu(false);
+      });
+      // If the viewport grows past the mobile breakpoint, drop menu state.
+      matchMedia('(min-width: 861px)').addEventListener('change', (e) => {
+        if (e.matches) setMenu(false);
+      });
+
+      // --- Scroll spy ----------------------------------------------------------
+      const spyLinks = [...document.querySelectorAll<HTMLAnchorElement>('a[data-spy]')];
+      const spyTargets = spyLinks
+        .map((a) => document.querySelector(a.getAttribute('href')!))
+        .filter(Boolean) as Element[];
+      if ('IntersectionObserver' in window && spyTargets.length) {
+        const visible = new Map<Element, number>();
+        const spy = new IntersectionObserver(
+          (entries) => {
+            for (const en of entries) {
+              if (en.isIntersecting) visible.set(en.target, en.intersectionRatio);
+              else visible.delete(en.target);
+            }
+            let best: Element | null = null;
+            let bestRatio = 0;
+            for (const [el, ratio] of visible) {
+              if (ratio > bestRatio) {
+                best = el;
+                bestRatio = ratio;
+              }
+            }
+            for (const a of spyLinks) {
+              const active = best !== null && a.getAttribute('href') === `#${best.id}`;
+              a.classList.toggle('active', active);
+              if (active) a.setAttribute('aria-current', 'true');
+              else a.removeAttribute('aria-current');
+            }
+          },
+          // Band around the upper-middle of the viewport so exactly one
+          // section reads as "current" while scrolling.
+          { rootMargin: '-25% 0px -55% 0px', threshold: [0, 0.1, 0.5, 1] },
+        );
+        spyTargets.forEach((t) => spy.observe(t));
+      }
+
+      // --- Reveal on scroll ------------------------------------------------------
+      const reveals = [...document.querySelectorAll<HTMLElement>('.reveal')];
+      if (prefersReduced || !('IntersectionObserver' in window)) {
+        reveals.forEach((el) => el.classList.add('in'));
+      } else {
+        const ro = new IntersectionObserver(
+          (entries) => {
+            for (const en of entries) {
+              if (en.isIntersecting) {
+                (en.target as HTMLElement).classList.add('in');
+                ro.unobserve(en.target);
+              }
+            }
+          },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
+        );
+        reveals.forEach((el) => ro.observe(el));
+      }
+
+      // --- Copy buttons -----------------------------------------------------------
+      for (const btn of document.querySelectorAll<HTMLButtonElement>('.copy')) {
+        btn.addEventListener('click', async () => {
+          const text = btn.dataset.copy ?? '';
+          try {
+            await navigator.clipboard.writeText(text);
+          } catch {
+            // Clipboard API can fail on http origins / older browsers —
+            // fall back to a hidden textarea + execCommand.
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+              document.execCommand('copy');
+            } finally {
+              ta.remove();
+            }
+          }
+          btn.classList.add('done');
+          setTimeout(() => btn.classList.remove('done'), 1600);
+        });
+      }
+
+      // --- Hero HUD: authoritative-room topology --------------------------------
+      // A small canvas diagram: the server node at center, three player
+      // clients around it; command packets travel inward (cyan), snapshot
+      // packets outward (amber). Authentic frame names from the wire spec.
+      // Pauses when off-screen or when the tab is hidden; static frame for
+      // reduced motion.
+      const canvas = document.querySelector<HTMLCanvasElement>('.hud-canvas');
+      const tickEl = document.querySelector<HTMLElement>('[data-hud-tick]');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          const AMBER = '#F5A54A';
+          const CYAN = '#57C8DE';
+          const GREEN = '#57D9A3';
+          const LINE = 'rgba(151, 161, 181, 0.28)';
+          const TEXT = '#97A1B5';
+          const clients = [
+            { label: 'alice', angle: -Math.PI / 2 },
+            { label: 'bob', angle: Math.PI / 6 },
+            { label: 'sam', angle: (5 * Math.PI) / 6 },
+          ];
+          const outLabels = ['snapshot', 'state', 'social'];
+          const inLabels = ['input', 'command', 'chat'];
+          type Packet = { link: number; out: boolean; t: number; speed: number; label: string };
+          let packets: Packet[] = [];
+          let raf = 0;
+          let running = false;
+          let last = 0;
+          let simTick = 1200;
+          let spawnClock = 0;
+          let W = 0;
+          let H = 0;
+          let dpr = 1;
+
+          const resize = () => {
+            const rect = canvas.getBoundingClientRect();
+            dpr = Math.min(devicePixelRatio || 1, 2);
+            W = rect.width;
+            H = rect.height;
+            canvas.width = Math.round(W * dpr);
+            canvas.height = Math.round(H * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            if (prefersReduced) drawStatic();
+          };
+
+          const geom = () => {
+            const cx = W / 2;
+            const cy = H / 2;
+            const r = Math.min(W, H) * 0.36;
+            return {
+              cx,
+              cy,
+              peers: clients.map((c) => ({
+                x: cx + Math.cos(c.angle) * r * (W > H ? 1.25 : 1),
+                y: cy + Math.sin(c.angle) * r,
+                label: c.label,
+              })),
+            };
+          };
+
+          const node = (x: number, y: number, r: number, color: string, label: string, below: boolean) => {
+            ctx.beginPath();
+            ctx.arc(x, y, r + 5, 0, Math.PI * 2);
+            ctx.strokeStyle = color + '33';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = '#12151D';
+            ctx.fill();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.fillStyle = TEXT;
+            ctx.font = '10px ui-monospace, Menlo, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, x, below ? y + r + 16 : y - r - 9);
+          };
+
+          const drawBase = (g: ReturnType<typeof geom>) => {
+            ctx.clearRect(0, 0, W, H);
+            // faint grid
+            ctx.strokeStyle = 'rgba(151, 161, 181, 0.05)';
+            ctx.lineWidth = 1;
+            const step = 26;
+            for (let x = step; x < W; x += step) {
+              ctx.beginPath();
+              ctx.moveTo(x, 0);
+              ctx.lineTo(x, H);
+              ctx.stroke();
+            }
+            for (let y = step; y < H; y += step) {
+              ctx.beginPath();
+              ctx.moveTo(0, y);
+              ctx.lineTo(W, y);
+              ctx.stroke();
+            }
+            // links
+            ctx.strokeStyle = LINE;
+            ctx.setLineDash([3, 5]);
+            for (const p of g.peers) {
+              ctx.beginPath();
+              ctx.moveTo(g.cx, g.cy);
+              ctx.lineTo(p.x, p.y);
+              ctx.stroke();
+            }
+            ctx.setLineDash([]);
+          };
+
+          const drawNodes = (g: ReturnType<typeof geom>) => {
+            node(g.cx, g.cy, 15, AMBER, 'authority', false);
+            // inner core dot
+            ctx.beginPath();
+            ctx.arc(g.cx, g.cy, 4, 0, Math.PI * 2);
+            ctx.fillStyle = AMBER;
+            ctx.fill();
+            g.peers.forEach((p, i) => node(p.x, p.y, 9, i === 1 ? GREEN : CYAN, p.label, p.y > g.cy));
+          };
+
+          const drawStatic = () => {
+            const g = geom();
+            drawBase(g);
+            // one frozen packet per link for a meaningful still image
+            for (let i = 0; i < g.peers.length; i++) {
+              const p = g.peers[i];
+              const t = 0.45 + i * 0.12;
+              const x = g.cx + (p.x - g.cx) * t;
+              const y = g.cy + (p.y - g.cy) * t;
+              ctx.beginPath();
+              ctx.arc(x, y, 3, 0, Math.PI * 2);
+              ctx.fillStyle = i % 2 ? CYAN : AMBER;
+              ctx.fill();
+            }
+            drawNodes(g);
+            if (tickEl) tickEl.textContent = String(simTick);
+          };
+
+          const frame = (now: number) => {
+            if (!running) return;
+            const dt = Math.min((now - last) / 1000, 0.05);
+            last = now;
+            simTick += dt * 60;
+            if (tickEl) tickEl.textContent = String(Math.floor(simTick));
+
+            spawnClock -= dt;
+            if (spawnClock <= 0) {
+              spawnClock = 0.28 + Math.random() * 0.3;
+              const link = Math.floor(Math.random() * 3);
+              const out = Math.random() < 0.55;
+              packets.push({
+                link,
+                out,
+                t: 0,
+                speed: 0.55 + Math.random() * 0.35,
+                label: out
+                  ? outLabels[Math.floor(Math.random() * outLabels.length)]
+                  : inLabels[Math.floor(Math.random() * inLabels.length)],
+              });
+              if (packets.length > 14) packets = packets.slice(-14);
+            }
+
+            const g = geom();
+            drawBase(g);
+            ctx.font = '9px ui-monospace, Menlo, monospace';
+            for (const pk of packets) {
+              pk.t += pk.speed * dt;
+              const p = g.peers[pk.link];
+              const t = pk.out ? pk.t : 1 - pk.t;
+              const x = g.cx + (p.x - g.cx) * t;
+              const y = g.cy + (p.y - g.cy) * t;
+              const color = pk.out ? AMBER : CYAN;
+              // trail
+              const tt = pk.out ? Math.max(t - 0.07, 0) : Math.min(t + 0.07, 1);
+              ctx.strokeStyle = color + '55';
+              ctx.lineWidth = 2;
+              ctx.beginPath();
+              ctx.moveTo(g.cx + (p.x - g.cx) * tt, g.cy + (p.y - g.cy) * tt);
+              ctx.lineTo(x, y);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.arc(x, y, 2.6, 0, Math.PI * 2);
+              ctx.fillStyle = color;
+              ctx.fill();
+              if (pk.t > 0.25 && pk.t < 0.75) {
+                ctx.fillStyle = color + 'AA';
+                ctx.textAlign = 'center';
+                ctx.fillText(pk.label, x, y - 8);
+              }
+            }
+            packets = packets.filter((p) => p.t < 1);
+            drawNodes(g);
+            raf = requestAnimationFrame(frame);
+          };
+
+          const start = () => {
+            if (running || prefersReduced) return;
+            running = true;
+            last = performance.now();
+            raf = requestAnimationFrame(frame);
+          };
+          const stop = () => {
+            running = false;
+            cancelAnimationFrame(raf);
+          };
+
+          resize();
+          addEventListener('resize', resize, { passive: true });
+          if (prefersReduced) {
+            drawStatic();
+          } else {
+            // Only animate while visible on screen and the tab is focused.
+            const vis = new IntersectionObserver(
+              (entries) => {
+                for (const en of entries) {
+                  if (en.isIntersecting && !document.hidden) start();
+                  else stop();
+                }
+              },
+              { threshold: 0.1 },
+            );
+            vis.observe(canvas);
+            document.addEventListener('visibilitychange', () => {
+              if (document.hidden) stop();
+              else {
+                const rect = canvas.getBoundingClientRect();
+                if (rect.bottom > 0 && rect.top < innerHeight) start();
+              }
+            });
+          }
+        }
+      }
+    </script>
+  </body>
+</html>

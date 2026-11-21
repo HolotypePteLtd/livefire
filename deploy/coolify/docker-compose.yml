@@ -1,0 +1,31 @@
+# Coolify deployment of the Openfire rooms node (dockercompose build pack).
+#
+# Traefik (Coolify's proxy) terminates TLS for the assigned domain and
+# routes to rooms-node on the container port. The docs can run separately.
+# Config files (node.json, oauth-client-jwks.json) live in OPENFIRE_CONFIG_DIR — generate
+# them once per box; see deploy/node.example.json for the schema and
+# deploy/coolify/README.md for the deployment instructions.
+#
+# Coolify notes: ports_exposes must be the STRING "8787"; the domain is
+# attached per service via docker_compose_domains (a PATCH), not in this
+# file; build context is '.' because Coolify sets --project-directory to
+# the repo root.
+services:
+  rooms-node:
+    build:
+      # Coolify runs docker compose with --project-directory set to the
+      # repo root, so '.' resolves to the repo root (where the Dockerfile
+      # lives) even though this file sits in deploy/coolify/.
+      context: .
+      dockerfile: Dockerfile
+    image: rooms-node:latest
+    restart: unless-stopped
+    volumes:
+      - ${OPENFIRE_CONFIG_DIR:-/opt/openfire}/node.json:/etc/rooms/node.json:ro
+      - ${OPENFIRE_CONFIG_DIR:-/opt/openfire}/oauth-client-jwks.json:/etc/rooms/oauth-client-jwks.json:ro
+      - rooms-data:/var/lib/rooms
+    expose:
+      - "8787"
+
+volumes:
+  rooms-data:

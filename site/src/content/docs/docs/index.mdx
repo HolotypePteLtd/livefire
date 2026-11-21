@@ -1,0 +1,60 @@
+---
+title: Overview
+description: Authoritative multiplayer rooms, realtime chat, and server-side physics over an open wire protocol.
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+Openfire puts **authoritative multiplayer in your game** — chat, shared state, and server-side physics running on a single self-hosted port. Speak it from **TypeScript**, **Dart**, or **any language** over the open WebSocket protocol.
+
+```text
+  Your Backend ── POST /v1/rooms ──► ┌─────────────────────────────────────────┐
+                                     │        Openfire Node (one port)         │
+  Players      ◄── WS /play/<key> ──►│  Fixed-step sim · Deltas · Chat · Auth  │
+                                     └─────────────────────────────────────────┘
+```
+
+> **New here?** Start with **[Instant multiplayer server](/docs/multiplayer-server/)** to go from zero to live rooms, chat, and shared state in minutes.
+
+## Pick a room type
+
+Every room is created from a JSON config — no server code required. The choice comes down to **who decides what's true**:
+
+<CardGrid>
+  <Card title="Shared state rooms" icon="random">
+    **Players decide.** Clients publish small JSON rows under server-enforced quotas and ownership. Nearly free to host — ideal for casual games, lobbies, and presence.
+
+    [Explore shared state rooms →](/docs/shared-state-rooms/)
+  </Card>
+  <Card title="Physics rooms" icon="rocket">
+    **Server decides.** Players send directional inputs; the server simulates movement and collisions with ReactPhysics3D so speed hacks and teleports are impossible.
+
+    [Explore physics rooms →](/docs/physics-rooms/)
+  </Card>
+  <Card title="Player accounts" icon="approve-check-circle">
+    **Optional Bluesky / AT Protocol sign-in.** Unlock DID-bound bans, prefetched avatars and display names, and cross-device resume with one config block.
+
+    [Set up player accounts →](/docs/accounts/)
+  </Card>
+  <Card title="Identity ladder" icon="seti:lock">
+    **Zero-signup device accounts.** Start players with a client-held ES256 recovery key on day zero and upgrade them to full accounts later.
+
+    [Read the identity ladder →](/docs/identity-ladder/)
+  </Card>
+</CardGrid>
+
+## What ships in every room
+
+| Feature | Included out of the box |
+| :--- | :--- |
+| **State sync** | Fixed-step simulation, 1 s baselines, baseline-relative deltas (never corrupted by packet loss) |
+| **Reconnects** | 15 s grace window keeping the same player ID, state, and chat history |
+| **Chat & roster** | Rate-limited single-line chat, 100-message history, pings, live member list |
+| **Moderation** | Room leader can lock, kick, or ban (account-bound bans up to 256 per room) |
+
+## SDKs & hosting
+
+- **SDKs:** Official **TypeScript** (`sdk/typescript`) and **Dart** (`packages/*`) SDKs ship in the repository. Any other language or engine can connect directly via the [open wire protocol](/docs/protocol-clients/).
+- **Self-hosting:** Free, complete, single-binary Docker image with automatic HTTPS via Caddy ([Self-hosting guide](/docs/self-hosting/)).
+- **Hosted preview:** Live at [play.holotype.com.sg](https://play.holotype.com.sg) (API keys on request; self-serve billing not yet open).
+- **Reference & AI agents:** Exact wire frames, HTTP endpoints, and JSON schemas live in [Wire protocol](/docs/protocol/) and machine-readable [llms.txt](/llms.txt).

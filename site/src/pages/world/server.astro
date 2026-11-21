@@ -1,0 +1,22 @@
+---
+// World demo — the SERVER frame (/world/server/): hosts the wasm room
+// engine (public/worlddemo/, built by scripts/build-world-demo.mjs from
+// site/worlddemo) and accepts BroadcastChannel connections from the two
+// client frames. No three.js here; this frame is deliberately tiny.
+import '../../styles/world.css';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Openfire world demo — server</title>
+    <meta name="robots" content="noindex" />
+  </head>
+  <body class="world-frame-body">
+    <p class="world-label">server · wasm room engine in this frame</p>
+    <p id="world-status">starting…</p>
+    <script is:inline type="module" src="/worlddemo/boot.mjs"></script>
+  </body>
+</html>
