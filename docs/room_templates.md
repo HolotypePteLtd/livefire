@@ -8,7 +8,7 @@ Pass the template name and its JSON configuration to `POST /v1/rooms`. The serve
 
 | Template | Who supplies state? | How clients interact | Best for |
 | :--- | :--- | :--- | :--- |
-| **`relay`** | **Players** (quota-enforced) | Publish JSON values to declared `playerKeys` / `roomKeys` | Casual games, lobbies, presence, turn-based state |
+| **`relay`** | **Players** (quota-enforced) | Update JSON values in the room using the declared `playerKeys` / `roomKeys` | Casual games, lobbies, presence, turn-based state |
 | **`physics`** | **Server** (ReactPhysics3D) | Send directional/action inputs; server simulates poses | Games with server-simulated movement and collisions |
 
 ```text
@@ -86,8 +86,8 @@ State is structured as `players[peerId][key]` (each player writes only their own
 { "type": "publishRoom", "key": "phase", "value": "started" }
 ```
 
-- **Soft rejections:** Invalid or over-quota writes are **dropped and counted, never disconnected** — the next valid publish succeeds. (Raw packet floods are still capped at 120 pkt/s and 4 KB by `RoomHub`.)
-- **Leader & pings:** The room creator (presenting `creatorToken`) is the leader. Pings (`here`, `help`, `ball`) read `x`/`y`/`z` from any published player key that contains finite coordinates.
+- **Soft rejections:** Invalid or over-quota writes are **dropped and counted, never disconnected** — the next valid update succeeds. (Raw packet floods are still capped at 120 pkt/s and 4 KB by `RoomHub`.)
+- **Leader & pings:** The room creator (presenting `creatorToken`) is the leader. Pings (`here`, `help`, `ball`) read `x`/`y`/`z` from any player key that contains finite coordinates.
 
 ### Snapshot shape
 

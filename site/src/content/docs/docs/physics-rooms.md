@@ -3,7 +3,7 @@ title: Physics rooms
 description: Configure colliders, movement, and input limits for a server-simulated room.
 ---
 
-Clients send movement inputs. The server applies the configured speed and collision rules, then sends each player’s position back to the clients. Use a physics room when the game depends on where a player can move.
+On a self-hosted node, each physics room runs its own ReactPhysics3D simulation. Clients send inputs such as move or jump. The node applies gravity and collisions, then sends each player’s position to the clients. Clients use those positions to draw the players on screen. Use a physics room when the game depends on where a player can move.
 
 ## Describe your world
 

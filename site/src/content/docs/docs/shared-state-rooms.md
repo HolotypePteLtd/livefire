@@ -3,7 +3,7 @@ title: Shared state rooms
 description: Configure player-owned and leader-owned JSON values in a relay room.
 ---
 
-Use a `relay` room when each player can supply their own state, such as a ready flag or an avatar pose. Declare the keys clients may write and how often they may update them. The server checks ownership and quotas. A client can still publish a false score or position within those limits. For server-computed positions, use [physics rooms](/docs/physics-rooms/).
+Use a `relay` room when each player can supply their own state, such as a ready flag or an avatar pose. Declare the keys clients may write and how often they may update them. The server checks ownership and quotas. A client can still send a false score or position within those limits. For server-computed positions, use [physics rooms](/docs/physics-rooms/).
 
 ## The settings file
 
@@ -37,6 +37,8 @@ Send this object as the `config` field in [the create-room request](/docs/multip
 
 ## Update your values
 
+Use the `publish` command to update one of your player’s values in the live room.
+
 ```dart
 player.sendControl({
   'type': 'publish',
@@ -45,7 +47,7 @@ player.sendControl({
 });
 ```
 
-The example config allows each player to publish `pose` ten times per second. Other players receive it in their next state update. Both `publish` and `publishRoom` update the running room in memory. They never write to an account or Jetstream. To publish a public result, the game makes a separate [match publishing call](https://github.com/HolotypePteLtd/livefire/blob/master/docs/match_events.md).
+With these settings a player can update `pose` up to ten times per second. Other players see the new position in the next snapshot. The room keeps the value in memory. Writing a public match result to a player’s PDS takes a separate call and the player’s consent. [Publish a match result](https://github.com/HolotypePteLtd/livefire/blob/master/docs/match_events.md).
 
 ## Read everyone's state
 
@@ -63,6 +65,8 @@ player.onChanged = () {
 
 ## The leader writes the shared values
 
+Use `publishRoom` to update a value shared by everyone in the room.
+
 ```dart
 player.sendControl({
   'type': 'publishRoom',
@@ -75,4 +79,4 @@ The leader presents the room’s `creatorToken` when joining. Other players can 
 
 ## Limits
 
-The server silently drops updates that exceed the configured byte or rate limits. Numbers in snapshots are rounded to four decimal places. For position pings, publish an object with finite `x`, `y`, and `z` coordinates. See the [template schema](/docs/templates/) for all limits.
+The server silently drops updates that exceed the configured byte or rate limits. Numbers in snapshots are rounded to four decimal places. For position pings, send a room update with finite `x`, `y`, and `z` coordinates. See the [template schema](/docs/templates/) for all limits.

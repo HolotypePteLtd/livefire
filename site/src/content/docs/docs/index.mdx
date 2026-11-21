@@ -3,9 +3,9 @@ title: Documentation
 description: Game server, room templates, hosting, and player accounts.
 ---
 
-A Livefire node runs rooms for one or more games. Your backend uses an API key to create a room and issue a one-time join token for each player. Give the client the room URL and its token. Keep the API key on your backend.
+A **room** is a live multiplayer session. A **node** is the Livefire server that hosts it. Your game backend creates a room and gives each player its URL and a one-time join token. Keep the API key on your backend.
 
-A guest room needs only the room SDK. AT Protocol sign-in and publishing are optional. See [where data goes during play, sign-in and publishing](/docs/how-it-works/#where-data-goes).
+Guests can play with just the room SDK. To see what happens when a player jumps, signs in, or publishes a match result, read [How rooms work](/docs/how-it-works/).
 
 ## Run the server
 
@@ -19,7 +19,7 @@ A guest room needs only the room SDK. AT Protocol sign-in and publishing are opt
 | --- | --- | --- |
 | [Shared state](/docs/shared-state-rooms/) | Values such as a ready flag or selected character | Checks ownership, size, and update frequency, then distributes the values. |
 | [Physics](/docs/physics-rooms/) | Movement inputs such as direction and jump | Simulates movement against the configured colliders and sends positions to the players. |
-| [Custom Dart room](/spec/room-authority.md) | Game-specific commands | Calls your `RoomAuthority` implementation to validate commands, update state, and produce snapshots. |
+| [Custom Dart room](/spec/room-authority.md) | Game-specific commands | Runs the rules you write in Dart and sends players the current game state. |
 
 ## Player accounts
 
