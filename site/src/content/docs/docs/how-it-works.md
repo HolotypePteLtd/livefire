@@ -18,9 +18,13 @@ Alice can also sign in with an AT Protocol **account**, an identity she can use 
 | Player identity and profile | The player’s PDS hosts their account. On sign-in, the node gets a verified account ID and can cache the public profile for the room’s player list. |
 | Published match results | On the player’s PDS. Publishing must be enabled, and the game must call `MatchEventPublisher.publishMatchEvent` with the player’s authorized session and consent. Games can also enable achievement records. |
 
-A game can keep its own data beyond a session. For example, a house-building game might save a neighbourhood as a list of houses and their locations. When Alice and Bob visit on Saturday, the **room** is their live session. The game can load the same neighbourhood for another visit on Sunday.
-
 Use the Dart `server_sdk` package to host rooms. Add `livefire_atproto_server` for account sign-in and public match records. The self-hosted node bundles both packages. [AT Protocol server package](https://github.com/HolotypePteLtd/livefire/tree/master/packages/atproto_server).
+
+## Familiar examples
+
+**World of Warcraft.** Picture two parties entering the Deadmines. In a game built with Livefire, each party’s dungeon run could be a separate **room**. When one party defeats a boss, the other party can still be fighting it. A single **node** could host both runs. [Blizzard’s dungeon guide](https://news.blizzard.com/en-us/article/24095666/unveiling-cataclysm-classic-zones-dungeons-and-pvp-season-9).
+
+**Second Life.** A resident can build a home on a parcel of land and invite friends over. To build a neighbourhood like that with Livefire, your game would save the houses and their locations. The **room** handles the visit, so Alice can see Bob walk through her front door. A new room can load the same houses when they meet again. [Second Life’s land guide](https://secondlife.com/land).
 
 ## Where state comes from
 
