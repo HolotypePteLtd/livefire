@@ -1,10 +1,5 @@
-// Orchestrator for the "two players share one world" section on
-// /docs/multiplayer-server/: when the section scrolls into view it
-// spins up the three frames (wasm server + two three.js clients) on a
-// fresh session id — no click, so first paint stays cheap and the wasm
-// only loads when the reader reaches the demo; two open tabs never
-// cross-talk (each page gets its own session). Served as a static file;
-// the docs page includes it verbatim.
+// Both the homepage and the multiplayer guide use this embed. Give each
+// page its own room and load the server and clients when the demo is in view.
 (function () {
   var host = document.getElementById('world-demo-frames');
   if (!host || host.childElementCount > 0) return;

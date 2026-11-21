@@ -24,8 +24,8 @@ import '../../styles/world.css';
   <body class="world-frame-body">
     <p class="world-label" id="world-role">client</p>
     <p id="world-status">connecting…</p>
-    <p class="world-hint" id="world-hint" hidden>click the scene, then WASD / arrows (shift = run)</p>
-    <canvas id="world-canvas" tabindex="0"></canvas>
+    <p class="world-hint" id="world-hint" hidden>Drag to move, or use WASD / arrows. Hold Shift to run.</p>
+    <canvas id="world-canvas" aria-label="Room view"></canvas>
     <script>
       import * as THREE from 'three';
       // ---- Role and channel -------------------------------------------------
@@ -34,13 +34,16 @@ import '../../styles/world.css';
       const isBot = params.get('bot') === '1';
       const playerName = isBot ? 'Bot' : params.get('n') || 'You';
       document.getElementById('world-role').textContent = isBot
-        ? 'client · scripted bot (red)'
-        : 'client · your avatar (blue)';
+        ? 'Bot’s view · red'
+        : 'Your view · blue';
       const status = (text) => { document.getElementById('world-status').textContent = text; };
       if (!session) { status('missing ?c= session id'); }
 
       // ---- Scene ------------------------------------------------------------
       const canvas = document.getElementById('world-canvas');
+      canvas.addEventListener('webglcontextcreationerror', () => {
+        status('This browser could not start WebGL 2.');
+      });
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
       renderer.setSize(innerWidth, innerHeight, false);
       const scene = new THREE.Scene();
@@ -153,7 +156,7 @@ import '../../styles/world.css';
       function handleFrame(msg) {
         if (msg.type === 'welcome') {
           myId = msg.id;
-          status(`in the room as ${msg.id} (${playerName})`);
+          status(`Connected · ${msg.id}`);
           return;
         }
         if (msg.type === 'baseline' || msg.type === 'snapshot') {
@@ -203,12 +206,40 @@ import '../../styles/world.css';
 
       // ---- Input -------------------------------------------------------------
       const keys = new Set();
+      let dragStart = null;
+      let dragX = 0;
+      let dragZ = 0;
       let botHeading = Math.random() * Math.PI * 2;
       let botRun = false;
       let nextBotTurn = performance.now() + 2000;
       if (!isBot) {
         const hint = document.getElementById('world-hint');
         hint.hidden = false;
+        canvas.tabIndex = 0;
+        canvas.setAttribute('aria-describedby', 'world-hint');
+        canvas.addEventListener('pointerdown', (e) => {
+          if (!e.isPrimary || e.button !== 0) return;
+          canvas.focus({ preventScroll: true });
+          canvas.setPointerCapture(e.pointerId);
+          dragStart = { x: e.clientX, y: e.clientY };
+          hint.hidden = true;
+        });
+        canvas.addEventListener('pointermove', (e) => {
+          if (!dragStart || !canvas.hasPointerCapture(e.pointerId)) return;
+          const dx = e.clientX - dragStart.x;
+          const dy = e.clientY - dragStart.y;
+          const scale = Math.max(32, Math.hypot(dx, dy));
+          dragX = dx / scale;
+          dragZ = dy / scale;
+        });
+        function stopMoving() {
+          keys.clear();
+          dragStart = null;
+          dragX = dragZ = 0;
+        }
+        canvas.addEventListener('lostpointercapture', stopMoving);
+        canvas.addEventListener('blur', stopMoving);
+        window.addEventListener('blur', stopMoving);
         canvas.addEventListener('keydown', (e) => {
           keys.add(e.key.toLowerCase());
           hint.hidden = true;
@@ -220,7 +251,7 @@ import '../../styles/world.css';
         if (!isBot) {
           const x = (keys.has('d') || keys.has('arrowright') ? 1 : 0) - (keys.has('a') || keys.has('arrowleft') ? 1 : 0);
           const z = (keys.has('s') || keys.has('arrowdown') ? 1 : 0) - (keys.has('w') || keys.has('arrowup') ? 1 : 0);
-          return { moveX: x, moveZ: z, run: keys.has('shift') };
+          return { moveX: x + dragX, moveZ: z + dragZ, run: keys.has('shift') };
         }
         if (now > nextBotTurn) {
           botHeading = Math.random() * Math.PI * 2;

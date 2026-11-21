@@ -1,0 +1,33 @@
+.world-demo-grid {
+  --world-gap: 0.5rem;
+  --view-height: min(38vh, 280px);
+  --server-height: 56px;
+  --view-rows: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--world-gap);
+}
+
+/* Reserve the frames' space while the observer waits to start the room. */
+@media (scripting: enabled) {
+  .world-demo-grid:empty {
+    min-height: calc(var(--server-height) + var(--view-rows) * (var(--view-height) + var(--world-gap)));
+  }
+}
+
+.world-demo-grid iframe {
+  width: 100%;
+  height: var(--view-height);
+  margin: 0;
+  border: 1px solid var(--world-border, var(--sl-color-hairline));
+  background: #12151d;
+}
+
+.world-demo-grid .world-server {
+  grid-column: 1 / -1;
+  height: var(--server-height);
+}
+
+@media (max-width: 44rem) {
+  .world-demo-grid { grid-template-columns: 1fr; --view-rows: 2; }
+}

@@ -1,3 +1,5 @@
+@import './world-embed.css';
+
 /* Use Starlight's theme picker and Expressive Code's paired syntax themes. */
 :root {
   --sl-content-width: 44rem;
@@ -59,27 +61,4 @@ main h1 {
   color: var(--sl-color-text-accent);
 }
 
-.world-demo-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-  margin-block: 1rem;
-}
-
-.world-demo-grid:empty { min-height: 6rem; }
-
-.world-demo-grid iframe {
-  width: 100%;
-  height: min(38vh, 280px);
-  margin: 0;
-  border: 1px solid var(--sl-color-hairline);
-}
-
-.world-demo-grid .world-server {
-  grid-column: 1 / -1;
-  height: 56px;
-}
-
-@media (max-width: 44rem) {
-  .world-demo-grid { grid-template-columns: 1fr; }
-}
+.world-demo-grid { margin-block: 1rem; }

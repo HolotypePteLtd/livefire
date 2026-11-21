@@ -193,7 +193,7 @@ If you have a preview API key, use `https://play.holotype.com.sg` as the node or
 
 ## Watch two players share one world
 
-Click the blue player’s view. Use WASD or the arrow keys to move and hold Shift to run. The red player is a bot. Both views receive positions from the same room engine, running in a third frame in your browser. The frames communicate over `BroadcastChannel`. This demo requires WebAssembly GC.
+Drag in the blue player’s view to move. With a keyboard, focus that view and use WASD or the arrow keys. Hold Shift to run. The red player is a bot. Both views receive positions from the same room engine, running in a third frame in your browser. The frames communicate over `BroadcastChannel`. This demo requires WebGL 2 and WebAssembly GC.
 
 <div class="world-demo-grid" id="world-demo-frames"></div>
 <script src="/world/orchestrator.js" defer></script>

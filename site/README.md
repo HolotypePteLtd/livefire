@@ -51,9 +51,9 @@ its `sources` map); the script checks the documented frame names against the imp
 
 | Path | Source |
 | --- | --- |
-| `/` | `src/pages/index.astro` introduces Livefire and runs the counter demo. |
-| `/demo/` | Standalone counter demo. The landing page uses the same Dart build from `scripts/build-demo.mjs`. |
-| `/world/server/`, `/world/client/` | the world demo's frames: wasm room server (site/worlddemo, compiled by `scripts/build-world-demo.mjs` to `public/worlddemo/`) and the three.js clients (three vendored via npm); orchestrated onto `/docs/multiplayer-server/` by `public/world/orchestrator.js` when the reader scrolls to the demo |
+| `/` | `src/pages/index.astro` introduces Livefire and embeds the playable WebGL room. |
+| `/demo/` | Standalone counter demo built by `scripts/build-demo.mjs`. |
+| `/world/server/`, `/world/client/` | `public/world/orchestrator.js` starts the WebAssembly room server and two three.js clients when the demo comes into view on `/` or `/docs/multiplayer-server/`. |
 | `/docs/` Overview | distilled |
 | `/docs/multiplayer-server/` | README.md quickstart + examples/counter + the former chat / put-my-game-online recipes |
 | `/docs/shared-state-rooms/` | docs/room_templates.md (relay), distilled |

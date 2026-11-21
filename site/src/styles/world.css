@@ -1,6 +1,11 @@
 /* World demo frames (server + client iframes) and the docs-page section.
  * Near-black cool backdrop to sit inside the site's dark theme. */
 .world-frame-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 8px 10px;
   margin: 0;
   font: 12px/1.45 system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: #edf1f7;
@@ -8,9 +13,6 @@
 }
 
 .world-label {
-  position: absolute;
-  top: 8px;
-  left: 10px;
   margin: 0;
   z-index: 2;
   color: #97a1b5;
@@ -20,9 +22,7 @@
 }
 
 #world-status {
-  position: absolute;
-  top: 8px;
-  right: 10px;
+  text-align: right;
   margin: 0;
   z-index: 2;
   color: #57d9a3;
@@ -45,12 +45,17 @@
   left: 10px;
   margin: 0;
   z-index: 2;
+  pointer-events: none;
   color: #97a1b5;
 }
 
 #world-canvas {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100vw;
   height: 100vh;
-  outline: none;
 }
+
+#world-canvas[tabindex] { touch-action: none; }
+#world-canvas:focus-visible { outline: 2px solid #dff863; outline-offset: -3px; }

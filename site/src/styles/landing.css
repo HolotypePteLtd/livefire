@@ -1,3 +1,5 @@
+@import './world-embed.css';
+
 :root {
   color-scheme: light dark;
   --page: light-dark(#f5f3ff, #101125);
@@ -9,7 +11,6 @@
   --chalk: #faf9ff;
   --lime: #dff863;
   --board-ink: #171936;
-  --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
   font: 100%/1.55 'Inter', system-ui, sans-serif;
   background: var(--page);
   color: var(--ink);
@@ -36,8 +37,8 @@ a:hover { text-decoration-thickness: 2px; }
 
 .hero-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.07fr) minmax(0, 1fr);
-  gap: clamp(2rem, 5vw, 5rem);
+  grid-template-columns: minmax(0, 0.74fr) minmax(0, 1.26fr);
+  gap: clamp(2rem, 3.5vw, 3.5rem);
   align-items: center;
   padding-block: clamp(3rem, 6vw, 6rem);
 }
@@ -66,23 +67,13 @@ h1 span { display: block; color: var(--lime); }
 .room-demo figcaption { padding: 1.15rem clamp(1rem, 2vw, 1.6rem) 1rem; }
 .room-demo h2 { font-size: clamp(1.55rem, 2.7vw, 2.1rem); font-weight: 660; letter-spacing: -0.045em; }
 .room-demo figcaption p { max-width: 44ch; margin-top: 0.45rem; color: var(--demo-muted); font-size: 0.94rem; }
-#demo-root { --inset: clamp(1rem, 2vw, 1.6rem); display: flex; flex-direction: column; min-height: 17.6rem; }
-#demo-root > p, .room-demo noscript p { padding: 0.5rem 1rem; }
-.demo-counts { display: flex; min-height: 6.8rem; border-block: 1px solid #181941; background: var(--lime); color: var(--board-ink); }
-.demo-counts span { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: 0.6rem var(--inset); font-size: 0.86rem; font-weight: 600; }
-.demo-counts span + span { border-left: 1px solid #82913f; }
-.demo-counts b { font: 550 clamp(2.5rem, 4vw, 3.6rem)/1.02 var(--mono); letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
-.demo-log { height: 5.7rem; overflow-y: auto; margin: 0.85rem var(--inset); font: 0.83rem/1.55 var(--mono); overflow-wrap: anywhere; }
-.demo-log .join, .demo-log .note, .demo-status { color: var(--demo-muted); }
-.demo-controls { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-inline: var(--inset); }
-.demo-controls input, .demo-controls button { min-height: 2.6rem; padding: 0.5rem 0.7rem; border: 1px solid #777793; border-radius: 3px; font: inherit; font-size: 0.86rem; }
-.demo-controls input { flex: 1 1 9rem; min-width: 0; color: var(--demo-text); background: light-dark(white, #101228); }
-.demo-controls input::placeholder { color: var(--demo-muted); }
-.demo-controls button { background: transparent; color: var(--demo-text); font-weight: 600; cursor: pointer; }
-.demo-controls .demo-plus { border-color: light-dark(#292b91, #b7b4ff); background: light-dark(#3233ad, #b7b4ff); color: light-dark(white, #171936); }
-.demo-controls button:hover { text-decoration: underline; }
-.demo-status { order: 1; margin: 0.55rem var(--inset) 0.8rem; font: 0.73rem/1.4 var(--mono); font-variant-numeric: tabular-nums; }
-.demo-error { overflow-wrap: anywhere; }
+.room-demo .world-demo-grid {
+  --world-gap: 1px;
+  --world-border: transparent;
+  background: var(--rule);
+}
+.room-demo .world-server { order: 1; }
+.room-demo noscript p { padding: 0.5rem 1rem; }
 
 .details { display: grid; grid-template-columns: 1fr 2fr; gap: clamp(2rem, 4vw, 4rem); padding-block: clamp(2.5rem, 4.5vw, 4rem); }
 .details + .details, footer { border-top: 1px solid var(--rule); }
@@ -94,9 +85,8 @@ h1 span { display: block; color: var(--lime); }
 footer { padding-block: 1.6rem; color: var(--muted); font-size: 0.87rem; }
 footer select { font: inherit; padding: 0.3rem; margin-left: 0.3rem; color: var(--ink); background: var(--page); border: 1px solid var(--rule); border-radius: 3px; }
 
-@media (max-width: 54rem) {
+@media (max-width: 60rem) {
   .hero-layout { grid-template-columns: 1fr; gap: 2rem; }
-  .room-demo { width: min(100%, 38rem); }
   .details { grid-template-columns: 1fr; }
   .details h2 { max-width: none; }
 }
@@ -104,6 +94,5 @@ footer select { font: inherit; padding: 0.3rem; margin-left: 0.3rem; color: var(
   .bar { min-height: 4rem; }
   .masthead nav { font-size: 0.88rem; }
   .descriptions { grid-template-columns: 1fr; }
-  .demo-controls input { flex-basis: 100%; }
   .details { gap: 1.4rem; }
 }
