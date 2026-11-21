@@ -19,7 +19,7 @@ Future<void> main() async {
     <div class="demo-counts"></div>
     <div class="demo-log" aria-live="polite"></div>
     <div class="demo-controls">
-      <input class="demo-input" type="text" maxlength="280"
+      <input class="demo-input" type="text" maxlength="280" aria-label="Chat message"
              placeholder="Say something as the third player…">
       <button class="demo-say" type="button">Send</button>
       <button class="demo-plus" type="button">+1 my counter</button>

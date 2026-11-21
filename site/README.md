@@ -1,6 +1,6 @@
 # Livefire site
 
-The homepage, guides, and API reference share one Astro Starlight theme. The build also produces the browser demos and downloadable text documentation.
+The landing page is a standalone Astro page at `/`. Starlight serves the guides and API reference under `/docs/`. The build also produces the browser demos and downloadable text documentation.
 
 ## Node versions
 
@@ -51,8 +51,8 @@ its `sources` map); the script checks the documented frame names against the imp
 
 | Path | Source |
 | --- | --- |
-| `/` | `src/content/docs/index.mdx` links to the local example, hosting guide, and PDS setup. |
-| `/demo/` | live in-page demo: the counter room engine (site/demo, compiled by `scripts/build-demo.mjs` to `public/demo/` at build time — needs the Dart SDK on PATH) and linked from the homepage and the first-room guide |
+| `/` | `src/pages/index.astro` introduces Livefire and runs the counter demo. |
+| `/demo/` | Standalone counter demo. The landing page uses the same Dart build from `scripts/build-demo.mjs`. |
 | `/world/server/`, `/world/client/` | the world demo's frames: wasm room server (site/worlddemo, compiled by `scripts/build-world-demo.mjs` to `public/worlddemo/`) and the three.js clients (three vendored via npm); orchestrated onto `/docs/multiplayer-server/` by `public/world/orchestrator.js` when the reader scrolls to the demo |
 | `/docs/` Overview | distilled |
 | `/docs/multiplayer-server/` | README.md quickstart + examples/counter + the former chat / put-my-game-online recipes |
@@ -158,6 +158,6 @@ node image, this Dockerfile uses its own `site/Dockerfile.dockerignore`
 
 - Docs pages: `src/content/docs/docs/*.md(x)` (the nested `docs/` directory
   is what puts them under `/docs/…`).
-- Homepage: `src/content/docs/index.mdx`. The homepage and docs use `src/styles/starlight.css`.
+- Homepage: `src/pages/index.astro` and `src/styles/landing.css`. The docs use `src/styles/starlight.css`.
 - Agent specs: `public/spec/*` (committed; validated at build time).
 - Docs config: `astro.config.mjs`.

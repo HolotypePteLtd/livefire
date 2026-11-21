@@ -15,7 +15,7 @@ if (typeof WebAssembly !== 'object') {
   fail('This browser cannot run the demo (WebAssembly is unavailable).');
 } else {
   try {
-    const app = await compileStreaming(fetch('main.wasm'));
+    const app = await compileStreaming(fetch(new URL('./main.wasm', import.meta.url)));
     const instance = await app.instantiate({});
     instance.invokeMain();
   } catch (e) {

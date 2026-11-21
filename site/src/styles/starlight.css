@@ -59,24 +59,6 @@ main h1 {
   color: var(--sl-color-text-accent);
 }
 
-.sl-markdown-content .guide-list {
-  display: grid;
-  grid-template-columns: minmax(10rem, 1fr) 2fr;
-  align-items: baseline;
-  margin-block: 2rem;
-  border-bottom: 1px solid var(--sl-color-hairline);
-}
-
-.guide-list > :is(dt, dd) {
-  margin: 0;
-  padding-block: 0.9rem;
-  border-top: 1px solid var(--sl-color-hairline);
-}
-
-.guide-list dt {
-  font-weight: 600;
-}
-
 .world-demo-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -99,7 +81,5 @@ main h1 {
 }
 
 @media (max-width: 44rem) {
-  .world-demo-grid, .sl-markdown-content .guide-list { grid-template-columns: 1fr; }
-  .guide-list dt { padding-block-end: 0; }
-  .guide-list dd { border-top: 0; padding-block-start: 0.25rem; }
+  .world-demo-grid { grid-template-columns: 1fr; }
 }
