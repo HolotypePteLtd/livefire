@@ -15,18 +15,11 @@ ${agentDocs}`;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="dark light" />
+    <meta name="color-scheme" content="dark" />
     <title>Livefire — Hosted multiplayer rooms</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={new URL('/', Astro.site)} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <script is:inline>
-      try {
-        const theme = localStorage.getItem('starlight-theme');
-        if (theme === 'light' || theme === 'dark') document.documentElement.style.colorScheme = theme;
-        if (theme === '') document.documentElement.style.colorScheme = 'light dark';
-      } catch { /* Use the landing page theme when storage is unavailable. */ }
-    </script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
@@ -106,15 +99,6 @@ ${agentDocs}`;
       </section>
     </main>
 
-    <footer class="wrap">
-      <label hidden id="theme-control">Appearance
-        <select id="theme">
-          <option value="auto">System</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select>
-      </label>
-    </footer>
     <script>
       if (navigator.clipboard?.writeText) {
         for (const button of document.querySelectorAll<HTMLButtonElement>('button[data-copy]')) {
@@ -139,16 +123,6 @@ ${agentDocs}`;
           });
         }
       }
-
-      const select = document.querySelector<HTMLSelectElement>('#theme')!;
-      const initialScheme = document.documentElement.style.colorScheme;
-      select.value = initialScheme === 'light dark' ? 'auto' : initialScheme || 'dark';
-      document.querySelector<HTMLLabelElement>('#theme-control')!.hidden = false;
-      select.addEventListener('change', () => {
-        const mode = select.value === 'auto' ? '' : select.value;
-        document.documentElement.style.colorScheme = mode || 'light dark';
-        try { localStorage.setItem('starlight-theme', mode); } catch { /* Apply for this page. */ }
-      });
     </script>
   </body>
 </html>
