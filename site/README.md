@@ -1,7 +1,6 @@
 # Livefire site
 
-Landing page + documentation site (Astro + Starlight, static build) with
-machine-readable agent endpoints.
+The homepage, guides, and API reference share one Astro Starlight theme. The build also produces the browser demos and downloadable text documentation.
 
 ## Node versions
 
@@ -30,7 +29,7 @@ npm ci
 npm run build
 ```
 
-`npm run build` runs three steps:
+`npm run build` compiles the two Dart browser demos, then runs three steps.
 
 1. `scripts/gen-agent-files.mjs` — generates `public/llms.txt` and
    `public/llms-full.txt` **from the same sources the site renders** (the
@@ -46,21 +45,21 @@ npm run build
 3. `astro build` — emits static files to `dist/`.
 
 The wire-protocol spec itself is hand-curated from reading the source (see
-its `sources` map); the script keeps it honest.
+its `sources` map); the script checks the documented frame names against the implementation.
 
 ## Layout
 
 | Path | Source |
 | --- | --- |
-| `/` landing (`src/pages/index.astro`) | marketing site: hero, features, how it works, use cases, pricing, FAQ |
-| `/demo/` | live in-page demo: the counter room engine (site/demo, compiled by `scripts/build-demo.mjs` to `public/demo/` at build time — needs the Dart SDK on PATH) and embedded on `/docs/multiplayer-server/` via a lazy iframe |
-| `/world/server/`, `/world/client/` | the world demo's frames: wasm room server (site/worlddemo, compiled by `scripts/build-world-demo.mjs` to `public/worlddemo/`) and the three.js clients (three vendored via npm); orchestrated onto `/docs/multiplayer-server/` by `public/world/orchestrator.js` on click |
+| `/` | `src/content/docs/index.mdx` links to the local example, hosting guide, and PDS setup. |
+| `/demo/` | live in-page demo: the counter room engine (site/demo, compiled by `scripts/build-demo.mjs` to `public/demo/` at build time — needs the Dart SDK on PATH) and linked from the homepage and the first-room guide |
+| `/world/server/`, `/world/client/` | the world demo's frames: wasm room server (site/worlddemo, compiled by `scripts/build-world-demo.mjs` to `public/worlddemo/`) and the three.js clients (three vendored via npm); orchestrated onto `/docs/multiplayer-server/` by `public/world/orchestrator.js` when the reader scrolls to the demo |
 | `/docs/` Overview | distilled |
 | `/docs/multiplayer-server/` | README.md quickstart + examples/counter + the former chat / put-my-game-online recipes |
 | `/docs/shared-state-rooms/` | docs/room_templates.md (relay), distilled |
 | `/docs/physics-rooms/` | docs/room_templates.md (physics), distilled |
 | `/docs/accounts/` | docs/identity.md (server config parts), distilled |
-| `/docs/where-accounts-live/` | new: where accounts live (Bluesky default / self-hosted Jetstream / PDS / auth), fact-checked against `packages/atproto_identity` + `packages/node/lib/src/node_config.dart` |
+| `/docs/where-accounts-live/` | Account hosting, handle resolution, and device accounts on an existing PDS |
 | `/docs/how-it-works/` | docs/protocol.md, distilled (URL /docs/concepts/ redirects here) |
 | `/docs/protocol/` | message table derived from `room_hub.dart` + `docs/protocol.md` embedded via markdown import |
 | `/docs/templates/` | `docs/room_templates.md` embedded via markdown import |
@@ -72,7 +71,7 @@ its `sources` map); the script keeps it honest.
 | `/spec/room-authority.md` | curated from `room_authority.dart` + `room_hub.dart` call sites |
 
 Pages that mirror repository documents embed them with Astro markdown
-imports (no copies); pages that distill note their source at the bottom.
+imports. Edit the source document to update both versions.
 
 ## Deploying to Cloudflare Pages (alternative to the compose/Caddy path)
 
@@ -155,14 +154,10 @@ pages markdown-import `../docs/*.md` and the build-time spec check reads
 node image, this Dockerfile uses its own `site/Dockerfile.dockerignore`
 (BuildKit per-Dockerfile ignore files).
 
-The GitHub links on the landing page point at
-`https://github.com/HolotypePteLtd/livefire` — adjust if the repository
-moves.
-
 ## Editing
 
 - Docs pages: `src/content/docs/docs/*.md(x)` (the nested `docs/` directory
   is what puts them under `/docs/…`).
-- Landing: `src/pages/index.astro` + `src/styles/landing.css`.
+- Homepage: `src/content/docs/index.mdx`. The homepage and docs use `src/styles/starlight.css`.
 - Agent specs: `public/spec/*` (committed; validated at build time).
 - Docs config: `astro.config.mjs`.

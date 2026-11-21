@@ -1,6 +1,6 @@
 ---
 title: Self-hosting
-description: The rooms server reference — config fields, TLS proxy, deployment checklist, running without Docker.
+description: Deploy a Livefire node with Docker Compose, verify HTTPS and create a room.
 ---
 
 ## Deploy with Docker Compose
@@ -162,34 +162,14 @@ site.
 
 ## Platform data in Supabase
 
-The node has two persistence modes, chosen automatically from its
-environment:
+By default the node uses SQLite. Admin access comes from `adminDids` in `node.json`. To manage admins through the panel or enable key quotas and the audit log, apply the [Supabase migrations](https://github.com/HolotypePteLtd/livefire/tree/master/supabase) to your stack. Set both environment variables on the node service, then restart the node.
 
-- **SQLite (default).** Everything the panel needs — admins, API keys,
-  counters — lives in the node's own SQLite file. Zero setup; this is
-  the self-hoster path and the behavior never changed.
-- **Supabase Postgres.** Set both environment variables on the node
-  service:
+```text
+SUPABASE_URL=https://<kong-domain-of-your-supabase-stack>
+SUPABASE_SECRET_KEY=<service-key>
+```
 
-  ```
-  SUPABASE_URL=https://<kong-domain-of-your-supabase-stack>
-  SUPABASE_SECRET_KEY=<service-key>
-  ```
-
-  and the platform half moves to Postgres (reached through Kong with
-  the stack's service key). This unlocks the panel's admin management, scoped API keys
-  (`maxRooms`, `templates`) and the audit log; `adminDids` seeds the
-  admin table on first boot, then the database is the source of truth.
-  The room **runtime** — rooms, peers, join tokens — stays in SQLite
-  either way: the data plane never waits on Postgres.
-
-Requirements for the Postgres mode (see `supabase/README.md` in the
-repository for the migration and exact steps): a self-hosted Supabase
-stack, its service key, and the panel tables applied once with
-`supabase/scripts/apply-migrations.sh`. Bearer-key lookup uses an
-in-memory cache. Creating rooms with panel-issued keys requires an
-authoritative quota check in Postgres. Unset the two variables and
-restart to return to SQLite mode.
+On first boot, `adminDids` seeds the Postgres admin table. The node then reads admins, panel-issued keys, and their limits from Postgres. It checks room creation quotas there. Room configuration and join-token consumption still use local SQLite. Live simulation state stays in memory. Unset both variables and restart to return to the node’s SQLite configuration.
 
 ## Run locally with Dart
 
@@ -216,22 +196,6 @@ Use the API check above against `http://127.0.0.1:8787/v1/rooms` with
 the key you saved in the local config. Clients on this node receive
 `ws://` room URLs.
 
-## Docs elsewhere, server here (split origins)
+## Serve the docs on a separate domain
 
-This compose file serves the docs from the same origin as the server
-(`https://<DOMAIN>/`), which is the single-origin convenience path. The
-site is plain static output, so it can equally be deployed to Cloudflare
-Pages (docs there, server here — see `site/README.md` for the wrangler and
-git-integrated paths). That is two origins and nothing breaks:
-
-- the site's internal links are same-origin paths (`/docs/…`,
-  `/llms.txt`, `/spec/…`) — they resolve under whichever domain serves
-  them;
-- the API's base URL is not hardcoded anywhere in the site: the
-  API reference documents `https://<your-server-domain>/v1/…`, and each
-  server deployment advertises its own origin via `publicBaseUrl` in
-  `node.json` (it builds the room URLs clients connect to).
-
----
-*Generated from `docker-compose.yml`, `deploy/Caddyfile` and
-`deploy/node.example.json` in the repository.*
+Compose serves the documentation and API on the same host. You can also deploy the static docs separately. Set `publicBaseUrl` to the node’s HTTPS origin so the API returns the correct room URLs. Add the web game’s origin to `allowedOrigins` if the game connects from a different host. See [site deployment](https://github.com/HolotypePteLtd/livefire/tree/master/site) for the build and hosting options.

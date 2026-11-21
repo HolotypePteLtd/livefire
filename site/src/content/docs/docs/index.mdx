@@ -1,60 +1,31 @@
 ---
-title: Overview
-description: Authoritative multiplayer rooms, realtime chat, and server-side physics over an open wire protocol.
+title: Documentation
+description: Game server, room templates, hosting, and player accounts.
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+A Livefire node runs rooms for one or more games. Your backend uses an API key to create a room and issue a one-time join token for each player. Give the client the room URL and its token. Keep the API key on your backend.
 
-Livefire puts **authoritative multiplayer in your game** — chat, shared state, and server-side physics running on a single self-hosted port. Speak it from **TypeScript**, **Dart**, or **any language** over the open WebSocket protocol.
+## Run the server
 
-```text
-  Your Backend ── POST /v1/rooms ──► ┌─────────────────────────────────────────┐
-                                     │        Livefire Node (one port)         │
-  Players      ◄── WS /play/<key> ──►│  Fixed-step sim · Deltas · Chat · Auth  │
-                                     └─────────────────────────────────────────┘
-```
+- [Run a room locally](/docs/multiplayer-server/) with the Dart counter example.
+- [Host a server](/docs/self-hosting/) on a Linux machine with Docker Compose and Caddy.
+- [Use the hosted preview](/docs/multiplayer-server/#hosted-preview) if you have a key for the hosted node.
 
-> **New here?** Start with **[Instant multiplayer server](/docs/multiplayer-server/)** to go from zero to live rooms, chat, and shared state in minutes.
+## Choose a room type
 
-## Pick a room type
+| Room | What the client sends | What the server does |
+| --- | --- | --- |
+| [Shared state](/docs/shared-state-rooms/) | Values such as a ready flag or selected character | Checks ownership, size, and update frequency, then distributes the values. |
+| [Physics](/docs/physics-rooms/) | Movement inputs such as direction and jump | Simulates movement against the configured colliders and sends positions to the players. |
+| [Custom Dart room](/spec/room-authority.md) | Game-specific commands | Calls your `RoomAuthority` implementation to validate commands, update state, and produce snapshots. |
 
-Every room is created from a JSON config — no server code required. The choice comes down to **who decides what's true**:
+## Player accounts
 
-<CardGrid>
-  <Card title="Shared state rooms" icon="random">
-    **Players decide.** Clients publish small JSON rows under server-enforced quotas and ownership. Nearly free to host — ideal for casual games, lobbies, and presence.
+Guests can join with a token from your backend. To show an account’s handle and avatar or apply a ban to its DID, [enable player sign-in](/docs/accounts/). If you run a Personal Data Server, see [Use an existing PDS](/docs/self-hosting/#already-run-a-pds).
 
-    [Explore shared state rooms →](/docs/shared-state-rooms/)
-  </Card>
-  <Card title="Physics rooms" icon="rocket">
-    **Server decides.** Players send directional inputs; the server simulates movement and collisions with ReactPhysics3D so speed hacks and teleports are impossible.
+## Reference
 
-    [Explore physics rooms →](/docs/physics-rooms/)
-  </Card>
-  <Card title="Player accounts" icon="approve-check-circle">
-    **Optional Bluesky / AT Protocol sign-in.** Unlock DID-bound bans, prefetched avatars and display names, and cross-device resume with one config block.
-
-    [Set up player accounts →](/docs/accounts/)
-  </Card>
-  <Card title="Identity ladder" icon="seti:lock">
-    **Zero-signup device accounts.** Start players with a client-held ES256 recovery key on day zero and upgrade them to full accounts later.
-
-    [Read the identity ladder →](/docs/identity-ladder/)
-  </Card>
-</CardGrid>
-
-## What ships in every room
-
-| Feature | Included out of the box |
-| :--- | :--- |
-| **State sync** | Fixed-step simulation, 1 s baselines, baseline-relative deltas (never corrupted by packet loss) |
-| **Reconnects** | 15 s grace window keeping the same player ID, state, and chat history |
-| **Chat & roster** | Rate-limited single-line chat, 100-message history, pings, live member list |
-| **Moderation** | Room leader can lock, kick, or ban (account-bound bans up to 256 per room) |
-
-## SDKs & hosting
-
-- **SDKs:** Official **TypeScript** (`sdk/typescript`) and **Dart** (`packages/*`) SDKs ship in the repository. Any other language or engine can connect directly via the [open wire protocol](/docs/protocol-clients/).
-- **Self-hosting:** Free, complete, single-binary Docker image with automatic HTTPS via Caddy ([Self-hosting guide](/docs/self-hosting/)).
-- **Hosted preview:** Live at [play.holotype.com.sg](https://play.holotype.com.sg) (API keys on request; self-serve billing not yet open).
-- **Reference & AI agents:** Exact wire frames, HTTP endpoints, and JSON schemas live in [Wire protocol](/docs/protocol/) and machine-readable [llms.txt](/llms.txt).
+- [HTTP API](/docs/api/) for room creation, join tokens, lookup, and shutdown
+- [Wire protocol](/docs/protocol/) for frame formats, state updates, and reconnects
+- [Room templates](/docs/templates/) for JSON settings and limits
+- [Documentation as text](/llms-full.txt) and [protocol specification as JSON](/spec/rooms-protocol.json)

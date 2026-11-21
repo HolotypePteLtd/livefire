@@ -1,35 +1,10 @@
 ---
 title: Identity
-description: Guest tokens vs AT Protocol (Bluesky) sign-in — the server as an OAuth client, bans bound to the account ID (DID), resume, profiles, and the privacy notes.
+description: Guest tokens, device accounts, OAuth, and DID-bound room sessions.
 ---
-
-> You only need this section if you want the details. For turning sign-in
-> on, see [Player accounts](/docs/accounts/); for where accounts can
-> live (Bluesky's servers or your own), [Where accounts live](/docs/where-accounts-live/);
-> for the mental model, [how it works](/docs/how-it-works/).
-
 
 import { Content as IdentityDoc } from '../../../../../docs/identity.md';
 
-Users can join with plain guest tokens (the server's API issues one-time
-join tokens), or sign in with their Bluesky account. Below, "DID" means
-the player's account ID on Bluesky's network. The two sign-in methods
-compose; the quick shape:
-
-| | Guest | AT Protocol sign-in |
-| --- | --- | --- |
-| Credential | one-time `jt_` token issued by the API | the same token, issued by the server after OAuth, carrying the verified DID |
-| Bans | per-connection only | bind to the account ID (new handle, new device — still banned) |
-| Resume | this device | the same account resumes anywhere; guests cannot resume a signed-in session |
-| Profile | none | displayName/avatar prefetched from the user's PDS on the roster |
-
-Sign-in is read-only by default: the server asks only for the `atproto`
-(identity) scope. An optional repo-write grant exists behind the
-`publishEvents` node setting (off by default) for publishing match
-events as public records — per-event player consent required; see the
-repository's shareable-rooms design notes.
+For setup instructions, see [Enable player sign-in](/docs/accounts/) or [Device accounts and recovery](/docs/identity-ladder/). Sign-in requests the `atproto` scope by default. For optional repo writes and per-event consent, see [match events](https://github.com/HolotypePteLtd/livefire/blob/master/docs/match_events.md).
 
 <IdentityDoc />
-
----
-*Generated from `docs/identity.md` (embedded above via markdown import).*

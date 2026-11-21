@@ -1,6 +1,6 @@
 # Control-Plane HTTP API
 
-The control-plane API manages room lifecycles and one-time join tokens. Both the hosted preview node (`https://play.holotype.com.sg`) and self-hosted nodes (`packages/node`) run the exact same implementation on one port.
+Send requests to your node’s HTTPS origin. If you have a hosted preview key, use `https://play.holotype.com.sg`.
 
 ---
 
@@ -50,7 +50,7 @@ Authorization: Bearer <api-key>
 ```
 
 - `template` *(required)* — `"relay"` or `"physics"`. Nodes without physics enabled return `422 unsupported_template`.
-- `config` *(required)* — validated strictly against [`room_templates.md`](room_templates.md) before provisioning. Unknown fields are rejected; configs are pinned verbatim.
+- `config` *(required)* — validated strictly against [the template schema](https://github.com/HolotypePteLtd/livefire/blob/master/docs/room_templates.md) before provisioning. Unknown fields are rejected; configs are pinned verbatim.
 - `region` *(optional)* — accepted and ignored on single-region nodes.
 
 **Response (`201 Created`):**

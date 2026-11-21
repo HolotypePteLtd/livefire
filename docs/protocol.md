@@ -84,4 +84,4 @@ Chat, pings, roster, and moderation share the reliable control lane (`RoomSocial
 - **`packages/client`** — `RoomClient`, interpolated `PlaybackClock`, and native/web WebSocket adapters.
 - **`packages/server_sdk`** — Native `RoomServer`, `RoomSupervisor`, `RoomsListener`, and platform authorities.
 
-See [`examples/counter`](../examples/counter) for a complete runnable join → chat → shared-state round trip.
+See [`examples/counter`](https://github.com/HolotypePteLtd/livefire/tree/master/examples/counter) for a complete runnable join → chat → shared-state round trip.

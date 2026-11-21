@@ -1,36 +1,8 @@
-/* Standalone demo page (served at /demo/, embedded on the
- * multiplayer-server page via a lazy iframe). */
-:root {
-  --demo-ink: #1c1533;
-  --demo-muted: #6b5f8a;
-  --demo-line: #d9d2ec;
-  --demo-accent: #242b3a;
-  --demo-accent-ink: #ffffff;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  padding: 14px;
-  font: 14px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
-  color: var(--demo-ink);
-  background: #ffffff;
-}
-
-.demo-label {
-  margin: 0 0 10px;
-  font-size: 12px;
-  color: var(--demo-muted);
-}
-
-.demo-label b {
-  color: var(--demo-accent);
-}
-
 #demo-root {
+  --demo-muted: var(--sl-color-text);
+  --demo-line: var(--sl-color-hairline);
+  --demo-accent: var(--sl-color-text-accent);
+  --demo-accent-ink: var(--sl-color-bg);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -57,7 +29,7 @@ body {
 
 .demo-counts span {
   border: 1px solid var(--demo-line);
-  border-radius: 999px;
+  border-radius: 3px;
   padding: 2px 10px;
   font-size: 12px;
 }
@@ -72,7 +44,7 @@ body {
   max-height: 220px;
   overflow-y: auto;
   border: 1px solid var(--demo-line);
-  border-radius: 8px;
+  border-radius: 3px;
   padding: 8px 10px;
   font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   font-size: 12.5px;
@@ -91,16 +63,18 @@ body {
 
 .demo-controls input {
   flex: 1;
-  min-width: 180px;
+  min-width: min(180px, 100%);
+  color: var(--sl-color-text);
+  background: var(--sl-color-bg);
   border: 1px solid var(--demo-line);
-  border-radius: 8px;
+  border-radius: 3px;
   padding: 8px 10px;
   font: inherit;
 }
 
 .demo-controls button {
   border: 0;
-  border-radius: 8px;
+  border-radius: 3px;
   padding: 8px 14px;
   font: inherit;
   font-weight: 600;

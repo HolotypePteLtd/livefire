@@ -1,30 +1,13 @@
 ---
 title: Wire protocol
-description: The Livefire session wire protocol — every frame, its fields, direction and semantics.
+description: Message formats, transport lanes, state replication, and WebSocket close codes.
 ---
-
-> You only need this section if you want the details. For the walkthrough,
-> see [Instant multiplayer server](/docs/multiplayer-server/); for the
-> mental model, [how it works](/docs/how-it-works/).
-
 
 import { Content as ProtocolDoc } from '../../../../../docs/protocol.md';
 
-The frame table below is derived from the implementation
-(`packages/protocol/lib/src/room_hub.dart`) and kept honest by a build-time
-cross-check. The machine-readable version — with limits, lanes and close
-codes — is [`/spec/rooms-protocol.json`](/spec/rooms-protocol.json).
+Clients send JSON text frames. The server accepts up to 4,096 characters per frame and 120 frames per second per peer. Handshake, chat, and error frames use the reliable lane. The server also sends state as JSON unless the client requests binary state and the room has a binary codec.
 
-Control and social frames are JSON text: client → server frames are
-capped at 4096 characters and rate-limited to 120 per second per peer,
-and the handshake, social and error frames always ride this reliable
-lane. Server → client state frames (snapshots and deltas) are also JSON
-by default — with one exception: a client that opts in with
-`binaryStates: true` on a room with a binary state codec receives them
-as binary frames instead, and JSON remains the fallback for everyone
-else. Binary frames never begin with `{`, so both kinds share one
-connection. Disposable state deltas prefer a separate state lane when
-the transport provides one.
+The [JSON specification](/spec/rooms-protocol.json) lists the fields, limits, and close codes. For a client implementation, follow [Write a WebSocket client](/docs/protocol-clients/).
 
 ## Frame table
 
@@ -79,12 +62,4 @@ the transport provides one.
 | 1001 | `Host closed the room` / `State receiver stalled` | room closed or drained; receiver unacked > 5 s while blocked |
 | 1008 | `Join timeout` / `Invalid request` / `Removed by host` | no join in 5 s; any protocol error; kick/ban |
 
-## Repository document
-
 <ProtocolDoc />
-
----
-*Generated from `docs/protocol.md` (embedded above via markdown import) and
-the frame handling in `packages/protocol/lib/src/room_hub.dart`; the message
-table is cross-checked against the source at build time
-(`site/scripts/check-spec.mjs`).*

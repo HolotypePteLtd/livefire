@@ -1,151 +1,105 @@
-/* Starlight theme: forged ember — near-black cool surfaces, ember-amber
-   primary, cyan secondary; restrained, professional game-backend feel
-   (shared with the landing page). Body text stays near-white; amber and
-   cyan are used for links, accents and code furniture only.
-   Both the light and dark Starlight scopes get the same dark values, so
-   the site is dark-only like the landing page (the theme toggle has no
-   visible effect and is hidden). */
-:root,
-:host,
-[data-theme='dark'],
-[data-theme='light'] {
-  /* Base surfaces */
-  --sl-color-white: #edf1f7; /* lightest: body text */
-  --sl-color-black: #0b0d12; /* darkest: page background */
-  --sl-color-bg: #0b0d12;
-  --sl-color-bg-nav: #0b0d12;
-  --sl-color-bg-sidebar: #12151d;
-  --sl-color-bg-accent: #f5a54a;
-  --sl-color-bg-badge: #12151d;
-  --sl-color-bg-inline-code: #12151d;
-
-  /* Gray ramp, dark mode: 1 = text side, 7 = surface side */
-  --sl-color-gray-1: #edf1f7;
-  --sl-color-gray-2: #d6dce8;
-  --sl-color-gray-3: #97a1b5; /* cool slate: secondary text */
-  --sl-color-gray-4: #74809a; /* >=4.5:1 on page bg for small text */
-  --sl-color-gray-5: #4a5468;
-  --sl-color-gray-6: #242b3a; /* thin borders */
-  --sl-color-gray-7: #12151d; /* panels */
-
-  --sl-color-border: #242b3a;
-  --sl-color-hairline: #242b3a;
-  --sl-color-hairline-light: #303950;
-  --sl-color-hairline-shade: #0b0d12;
-
-  /* Accents */
-  --sl-color-accent: #f5a54a; /* ember amber */
-  --sl-color-accent-high: #ffc981;
-  --sl-color-accent-low: #241b10;
-  --sl-color-text: #edf1f7;
-  --sl-color-text-accent: #f5a54a;
-  --sl-color-text-invert: #221204;
-  --sl-color-heading: #edf1f7;
-
-  --sl-color-asides-border: #242b3a;
-  --sl-color-asides-text-accent: #97a1b5;
-  --sl-color-border-badge: #242b3a;
-  --sl-color-backdrop-overlay: rgb(5 7 10 / 0.75);
-
-  /* Expressive-code blocks: near-black cool panels, near-white code text.
-     !important: the EC stylesheet ships as a separate chunk that loads
-     AFTER this one on code-heavy pages, with same-specificity :root
-     definitions — without this, its slate-gray defaults would win there. */
-  --ec-codeBg: #12151d !important;
-  --ec-codeFg: #edf1f7 !important;
-  --ec-codeSelBg: #2a3247 !important;
-  --ec-brdCol: #242b3a !important;
-  --ec-gtrFg: #74809a !important;
-  --ec-gtrBrdCol: #242b3a66 !important;
-  --ec-focusBrd: #f5a54a !important;
-  --ec-frm-edBg: #0b0d12 !important;
-  --ec-frm-edTabBarBg: #0b0d12 !important;
-  --ec-frm-edActTabBg: #12151d !important;
-  --ec-frm-edActTabFg: #edf1f7 !important;
-  --ec-frm-edActTabIndBtmCol: #f5a54a !important;
-  --ec-frm-inlBtnBg: #12151d !important;
-  --ec-frm-copyIcon: #97a1b5 !important;
+/* Use Starlight's theme picker and Expressive Code's paired syntax themes. */
+:root {
+  --sl-content-width: 44rem;
+  --sl-sidebar-width: 16rem;
+  --sl-font: 'Inter', var(--sl-font-system);
+  --sl-line-height: 1.65;
+  --sl-color-bg: #1c1d1a;
+  --sl-color-bg-nav: var(--sl-color-bg);
+  --sl-color-bg-sidebar: #20211e;
+  --sl-color-bg-inline-code: #2e302a;
+  --sl-color-hairline: #383a33;
+  --sl-color-hairline-light: #42443e;
+  --sl-color-white: #f3f1e9;
+  --sl-color-text: #d6d6cf;
+  --sl-color-accent-high: #eeaa86;
+  --sl-color-text-accent: var(--sl-color-accent-high);
+  --sl-color-accent-low: #392b24;
 }
 
-/* Restrained accents: no glows on titles or headings; link hovers shift
-   to the cool cyan secondary. Body text is untouched. */
-main a:hover,
-aside a:hover {
-  color: #57c8de;
+:root[data-theme='light'] {
+  --sl-color-bg: #fdfcf9;
+  --sl-color-bg-nav: var(--sl-color-bg);
+  --sl-color-bg-sidebar: #f5f4ef;
+  --sl-color-bg-inline-code: #eeede7;
+  --sl-color-hairline: #d8d7d0;
+  --sl-color-hairline-light: #ddddd6;
+  --sl-color-white: #262823;
+  --sl-color-text: #363932;
+  --sl-color-accent: #904323;
+  --sl-color-accent-low: #f2e4da;
+  --sl-color-text-accent: var(--sl-color-accent);
 }
 
-::selection {
-  background: #f5a54a;
-  color: #221204;
+.site-title {
+  color: var(--sl-color-white);
+  font-weight: 700;
 }
 
-/* On-theme scrollbars (Starlight's default thumb is near-white). */
-html {
-  scrollbar-color: #303950 #0b0d12;
+main h1, .sl-markdown-content h2 {
+  font-family: 'Iowan Old Style', Charter, Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.025em;
 }
 
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+main h1 {
+  font-size: clamp(2.4rem, 4vw, 3.2rem);
 }
 
-::-webkit-scrollbar-track {
-  background: #0b0d12;
+.sl-markdown-content h2 {
+  font-size: clamp(1.65rem, 3vw, 2rem);
 }
 
-::-webkit-scrollbar-thumb {
-  background: #303950;
-  border-radius: 6px;
-  border: 2px solid #0b0d12;
+.sl-markdown-content a {
+  text-underline-offset: 0.18em;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #4a5468;
+.sidebar-content [aria-current='page'] {
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-text-accent);
 }
 
-/* Dark-only site: hide the (now no-op) light/dark toggle. */
-.toggle {
-  display: none;
+.sl-markdown-content .guide-list {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) 2fr;
+  align-items: baseline;
+  margin-block: 2rem;
+  border-bottom: 1px solid var(--sl-color-hairline);
 }
 
-/* World demo section (multiplayer-server): 3-frame grid that the
- * orchestrator fills when the section scrolls into view; the frames
- * themselves load their own styles (world.css). Layout goal: the slim
- * server strip plus both side-by-side client views — and the section
- * intro above them — fit on roughly one screen, no page scrolling. */
+.guide-list > :is(dt, dd) {
+  margin: 0;
+  padding-block: 0.9rem;
+  border-top: 1px solid var(--sl-color-hairline);
+}
+
+.guide-list dt {
+  font-weight: 600;
+}
+
 .world-demo-grid {
   display: grid;
-  gap: 8px;
-  grid-template-columns: 1fr 1fr; /* clients side by side on desktop */
-  margin: 0.5rem 0 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-block: 1rem;
 }
 
-/* Placeholder height until the frames spawn, so the grid scrolls into
- * view as a visible block and the layout does not jump. */
-.world-demo-grid:empty {
-  min-height: 96px;
-}
+.world-demo-grid:empty { min-height: 6rem; }
 
 .world-demo-grid iframe {
   width: 100%;
-  /* Viewport-capped so the section fits one screen on any display;
-   * each frame's three.js resize handler re-fixes camera aspect when
-   * this height changes. */
   height: min(38vh, 280px);
-  border: 1px solid #242b3a;
-  border-radius: 10px;
-  background: #12151d;
+  margin: 0;
+  border: 1px solid var(--sl-color-hairline);
 }
 
-.world-demo-grid iframe.world-server {
+.world-demo-grid .world-server {
   grid-column: 1 / -1;
-  /* Slim status strip: it only shows the label + tick line. */
   height: 56px;
 }
 
-/* Stack the two client views only on narrow/mobile widths. */
-@media (max-width: 720px) {
-  .world-demo-grid {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 44rem) {
+  .world-demo-grid, .sl-markdown-content .guide-list { grid-template-columns: 1fr; }
+  .guide-list dt { padding-block-end: 0; }
+  .guide-list dd { border-top: 0; padding-block-start: 0.25rem; }
 }

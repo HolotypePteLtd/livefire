@@ -1,25 +1,9 @@
 ---
 title: Shared state rooms
-description: Everyone sees the same state — poses, scores, game phase — from one settings file. No server code.
+description: Configure player-owned and leader-owned JSON values in a relay room.
 ---
 
-A shared state room (the **relay** template) gives every player their own
-values (position, emote, ready-flag…) and the room a set of shared values
-(game phase, round number…), and keeps everyone seeing the same thing.
-You configure it with a settings file — no server code.
-
-The trade to know before you build on it: in a shared state room **the
-players decide**. The server checks that each value fits the size and
-rate limits you set, but it trusts what players publish — a hacked
-client can claim any position or score it likes. That is fine, and
-nearly free, for casual games, social spaces and prototypes. For
-anything competitive, use [physics rooms](/docs/physics-rooms/)
-instead — there the server decides and cheating gets nothing.
-
-This page continues [Instant multiplayer server](/docs/multiplayer-server/)
-(that page covers running the server, creating rooms and connecting).
-Any language works: the updates are plain JSON frames over a WebSocket —
-[Writing a client in any language](/docs/protocol-clients/).
+Use a `relay` room when each player can supply their own state, such as a ready flag or an avatar pose. Declare the keys clients may write and how often they may update them. The server checks ownership and quotas. A client can still publish a false score or position within those limits. For server-computed positions, use [physics rooms](/docs/physics-rooms/).
 
 ## The settings file
 
@@ -41,12 +25,7 @@ Any language works: the updates are plain JSON frames over a WebSocket —
 }
 ```
 
-Create the room by posting it as the `config` of a `POST /v1/rooms` call —
-see [step 5 of Instant multiplayer server](/docs/multiplayer-server/#5-create-a-room-and-invite-players).
-That call works against your own node or the [hosted preview
-node](/docs/multiplayer-server/#the-hosted-node-preview-rooms-without-a-server)
-(`https://play.holotype.com.sg`, API key on request) — same API, same
-config.
+Send this object as the `config` field in [the create-room request](/docs/multiplayer-server/#create-a-room-and-invite-players), with `"template": "relay"` at the top level.
 
 | Setting | What it means |
 | --- | --- |
@@ -66,8 +45,7 @@ player.sendControl({
 });
 ```
 
-This updates **your** `pose` value. Ten times a second is plenty for a
-position. Everyone in the room receives it.
+The example config allows each player to publish `pose` ten times per second. Other players receive it in their next state update.
 
 ## Read everyone's state
 
@@ -81,8 +59,7 @@ player.onChanged = () {
 };
 ```
 
-`latest` is always the room's current state — reconnects and slow networks
-are handled for you.
+`latest` holds the most recent snapshot the client has received.
 
 ## The leader writes the shared values
 
@@ -94,17 +71,8 @@ player.sendControl({
 });
 ```
 
-Works only for the room's leader (the creator — prove it by joining with
-the room's `creatorToken`). Everyone else's `room['phase']` updates on its
-own.
+The leader presents the room’s `creatorToken` when joining. Other players can read `phase` in the room snapshot.
 
-## Good to know
+## Limits
 
-- Updates too big or too fast are **dropped silently**, never crash a game
-  — set your limits in the settings file to match your game.
-- Numbers arrive rounded to 4 decimal places. Close enough for poses;
-  don't use it as a calculator.
-- Markers ("I'm here" pings) work automatically: the room answers them
-  from any player key holding an object with finite `x`, `y`, `z` numbers.
-- All the exact limits and the full settings schema live in
-  [the templates reference](/docs/templates/).
+The server silently drops updates that exceed the configured byte or rate limits. Numbers in snapshots are rounded to four decimal places. For position pings, publish an object with finite `x`, `y`, and `z` coordinates. See the [template schema](/docs/templates/) for all limits.

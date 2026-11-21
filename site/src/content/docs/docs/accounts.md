@@ -1,19 +1,11 @@
 ---
-title: Player accounts
-description: Players sign in with their Bluesky account — real names, avatars on the player list, bans that stick to the account.
+title: Enable player sign-in
+description: Configure AT Protocol OAuth and sign players in with their existing handles.
 ---
 
-With accounts on, players can sign in with their **Bluesky** account.
-Their real display name and avatar show up on the player list, and a
-banned player cannot just rejoin with a new nickname — the ban sticks to
-their account. Players who don't sign in still play as guests, exactly as
-before.
+A player who signs in can use their existing AT Protocol account, including one hosted on their own PDS. Livefire adds their public profile to the room roster and binds bans to their account ID (DID). Guests can still join with a one-time token.
 
-This is a server setting, not code — your game keeps working unchanged.
-You need your rooms server running
-([Instant multiplayer server](/docs/multiplayer-server/#4-put-the-server-on-the-internet))
-and a web address that starts with `https://` (Bluesky's sign-in service
-requires it).
+Start with a [running node on an HTTPS domain](/docs/self-hosting/). You’ll need Dart to generate the node’s signing key.
 
 ## 1. Make the server's private key (once)
 
@@ -26,7 +18,7 @@ sudo chown 10001:10001 oauth-client-jwks.json
 sudo chmod 400 oauth-client-jwks.json
 ```
 
-Keep the file like a password: back it up once, don't commit it to git.
+Back up the private key and keep it out of version control.
 
 ## 2. Turn sign-in on in `node.json`
 
@@ -64,37 +56,14 @@ must implement `com.atproto.identity.resolveHandle`.
 See [using an existing PDS](/docs/self-hosting/#already-run-a-pds)
 to set up guest account creation.
 
-## 3. Add the button to your site
+## 3. Start sign-in from your game
 
-Point it at your server's sign-in start address, with the player's handle
-and the room key:
+When the player chooses **Sign in**, request the following URL on your node. Supply the player’s handle and the room’s `roomKey`.
 
 ```text
-https://rooms.example.com/auth/start?handle=alice.bsky.social&room=7YPL-xKq3-...
+GET /auth/start?handle=alice.bsky.social&room=7YPL-xKq3-...&format=json
 ```
 
-Livefire sends the player to their account provider’s sign-in screen
-and then hands your game a join token tied to their account ID. (Your site can
-watch for the result at `/auth/result` — the exact endpoints are in the
-[Identity reference](/docs/identity/).)
+Open the returned `authorizationUrl` in the player’s browser. Keep the `flow` value and poll `GET /auth/result?flow=<flow>` while the player approves sign-in with their account provider. On success, connect to the returned `url`, which includes the join token. Without `format=json`, the start endpoint redirects the browser directly to the provider. The roster includes the verified DID and updates when the node fetches the player’s public profile. See the [identity reference](/docs/identity/) for the handshake and resume rules.
 
-## What changes in your game
-
-| Before | After |
-| --- | --- |
-| Player names are nicknames anyone can type. | Signed-in players carry their real Bluesky display name and avatar — the room sends them on the player list, ready to draw. |
-| A banned player returns with a new nickname in 5 seconds. | A ban applies to the signed-in account. Guests can still be banned by connection. |
-| Reconnecting after a drop uses a rejoin token. | Signed-in players also get their session back by account, not just by token. |
-
-## Good to know
-
-- Sign-in is optional for players — guest play stays the default.
-- The first time you use it with the real Bluesky, sign in yourself once
-  and watch the server's logs; typos in `publicBaseUrl` (missing
-  `https://`) are the usual culprit.
-- How it works inside (OAuth, DIDs — you don't need this to use it):
-  [the Identity reference](/docs/identity/).
-- Where the accounts themselves can live — Bluesky's servers (the
-  default) or your own: [Where accounts live](/docs/where-accounts-live/).
-- Publishing match results and achievements as public records on the
-  player's account is an opt-in server feature. See the [match event guide](https://github.com/HolotypePteLtd/livefire/blob/master/docs/match_events.md).
+If sign-in fails, check the node logs and confirm `publicBaseUrl` matches the public HTTPS origin. To publish a result or achievement to a consenting player’s account, see [match events](https://github.com/HolotypePteLtd/livefire/blob/master/docs/match_events.md).

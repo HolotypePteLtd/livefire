@@ -1,46 +1,18 @@
 # Livefire
 
-**Authoritative multiplayer rooms, realtime chat, and server-side physics — self-hosted on a single port.**
+Livefire hosts multiplayer rooms. A game backend creates a room over HTTP and gives each player a one-time WebSocket join token. Clients can use the Dart or TypeScript SDK, or implement the wire protocol directly.
 
-Livefire is a transport-agnostic room engine with a fixed-step authoritative simulation loop, baseline/delta state replication, automatic reconnects, built-in chat and moderation, and optional AT Protocol (Bluesky) identity. Speak it from **Dart**, **TypeScript**, or **any language** over the open JSON/binary WebSocket protocol.
+[Run a room](https://rooms-sdk-docs.pages.dev/docs/multiplayer-server/) · [Host a server](https://rooms-sdk-docs.pages.dev/docs/self-hosting/) · [Use an existing PDS](https://rooms-sdk-docs.pages.dev/docs/self-hosting/#already-run-a-pds)
 
-> The existing Dart package names and the TypeScript package `openfire-sdk` still work. TypeScript clients can import `Livefire` or the existing `Openfire` alias.
+The TypeScript package is `openfire-sdk`. It exports `Livefire` and its original alias, `Openfire`.
 
----
+## Choose a room type
 
-## How it fits together
-
-```text
-  Game Backend (your server)                  Players (Browser / Desktop / Mobile)
-  ──────────────────────────                  ────────────────────────────────────
-             │                                                 │
-             │ 1. POST /v1/rooms                               │ 2. WebSocket
-             │    Bearer <API key>                             │    wss://host/play/<roomKey>?token=<jt_…>
-             ▼                                                 ▼
-  ┌──────────────────────────────────────────────────────────────────────────────┐
-  │                         Livefire Node (one port)                             │
-  │                                                                              │
-  │   /v1/*         Control plane   ──► create rooms, mint join tokens, drain    │
-  │   /play/<key>   Data plane      ──► RoomHub (fixed-step sim, deltas, chat)   │
-  │   /auth/*       AT Protocol     ──► Bluesky OAuth → DID-bound join tokens    │
-  │   /ident/*      Guest ladder    ──► device accounts + recovery keys          │
-  │   /panel        Developer UI    ──► manage API keys, admins, audit log       │
-  └──────────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Choose your room type
-
-| Room type | Who decides truth? | Best for | Cost |
-| :--- | :--- | :--- | :--- |
-| **Relay** (`relay`) | **Players** (server enforces quotas & ownership) | Casual games, lobbies, presence, turn-based state | Nearly free |
-| **Physics** (`physics`) | **Server** (ReactPhysics3D movement & colliders) | Competitive action, movement, anti-cheat | Moderate CPU |
-| **Custom** (`RoomAuthority`) | **Your Dart code** | Custom game rules, custom binary codecs | Depends on sim |
-
-Every room type includes **chat**, **roster**, **pings**, **lock/kick/ban moderation**, **15 s reconnect grace**, and **baseline/delta replication** out of the box.
-
----
+| Room | What the server does |
+| --- | --- |
+| Relay | Accepts player-owned JSON values within configured size and rate limits. A lobby might use these for ready flags or character selection. |
+| Physics | Simulates player inputs against configured colliders and sends positions to each client. |
+| Custom | Runs your Dart `RoomAuthority` implementation for game-specific rules and snapshots. |
 
 ## Quickstart
 
@@ -68,7 +40,9 @@ game.onState((state) => render(state));
 Run the complete example in [`examples/counter`](examples/counter):
 
 ```sh
-cd examples/counter && dart run
+cd examples/counter
+dart pub get
+dart run
 ```
 
 **1. Implement your rules (`RoomAuthority`)** — networking never imports your game types:
@@ -165,7 +139,7 @@ with Dart and adding optional Bluesky sign-in or Supabase.
 | [Wire protocol](docs/protocol.md) | Handshake, fixed-step ticks, baseline/delta replication, social frames, close codes |
 | [Control-plane HTTP API](docs/control_plane_api.md) | `/v1/rooms` lifecycle, API key scoping, one-time join tokens, error format |
 | [Room templates](docs/room_templates.md) | `relay` and `physics` JSON schemas, quotas, input protocol, snapshots |
-| [Identity](docs/identity.md) | Guest tokens, AT Protocol OAuth sign-in, DID-bound bans/profiles, guest identity ladder |
+| [Identity](docs/identity.md) | Guest tokens, AT Protocol OAuth sign-in, DID-bound bans/profiles, device accounts and recovery |
 
 ---
 

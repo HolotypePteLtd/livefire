@@ -1,49 +1,13 @@
 ---
-title: Instant multiplayer server
-description: One page from zero to a running multiplayer backend — chat, shared state, settings-driven game modes. No networking knowledge needed.
+title: Run a room
+description: Run the local Dart counter, connect two players, and create a room on a Livefire node.
 ---
 
-Goal: by the end of this page you have a multiplayer backend running —
-first on your machine, then on your own server on the internet — with
-players chatting and sharing state. Everything is copy-paste; nothing here
-needs networking knowledge.
+The counter example starts a WebSocket server on your machine, connects two scripted players, then shuts down. You need Dart 3.12 or later. To try it without installing Dart, [open the browser demo](/demo/).
 
-> The rooms speak an open WebSocket + JSON protocol — any language can
-> integrate; see [Writing a client in any
-> language](/docs/protocol-clients/). The walkthrough below uses the
-> official SDK (its examples happen to be in Dart); the server parts
-> stay the same whatever your client is written in.
+<span id="1-run-the-same-demo-on-your-machine"></span>
 
-## Watch two players share one world
-
-A live world: the server and two players, running in your browser.
-Click the left scene and use WASD or arrow keys to drive the blue
-avatar (shift = run). The red one is a bot.
-
-<div class="world-demo-grid" id="world-demo-frames"></div>
-<script src="/world/orchestrator.js" defer></script>
-
-**What you are seeing:**
-
-- The server frame runs the same room engine the real server runs.
-- Every position comes from the server's snapshots. Clients send only
-  inputs and interpolate toward the last state — a modified client
-  cannot move faster than the server allows or leave the area.
-- The three frames are separate programs in your browser joined by a
-  same-origin message bus (`BroadcastChannel`). This is not network
-  peer-to-peer; nothing leaves your browser.
-- Movement is speed-clamped by design. The production physics template
-  adds a real engine (ReactPhysics3D) as a server process.
-- The server frame needs a browser with WebAssembly GC — modern Chrome,
-  Edge, Firefox and Safari 18.2+. Older Safari shows a notice instead
-  of a broken frame.
-
-## 1. Run the same demo on your machine
-
-The demos above run in your browser with zero installs. A real room
-runs as a normal process on any machine — here is one that way: two
-scripted players, chat, a shared counter. You need the Dart runtime from <https://dart.dev/get-dart>; check
-with `dart --version` (3.x), then:
+## Run the local example
 
 ```sh
 git clone https://github.com/HolotypePteLtd/livefire
@@ -52,7 +16,7 @@ dart pub get
 dart run
 ```
 
-You should see:
+The port and tick will vary. Look for Alice receiving Bob’s count before the clients disconnect.
 
 ```text
 [server] room listening on ws://127.0.0.1:xxxxx/play/demo-room
@@ -62,18 +26,13 @@ You should see:
 [done] clients left, room closed cleanly
 ```
 
-That is real multiplayer: a room server on a real WebSocket, two players
-joining over it, chat, and shared state. The whole program is
-`examples/counter/bin/counter.dart` in the
-[repository](https://github.com/HolotypePteLtd/livefire) — about 130 lines.
+<span id="2-make-it-yours"></span>
 
-## 2. Make it yours
+## Add your game rules
 
-The demo is three parts. You keep the same shape for any game.
+The [counter source](https://github.com/HolotypePteLtd/livefire/blob/master/examples/counter/bin/counter.dart) has three parts. `CounterAuthority` keeps a count for each player, `RoomServer` listens on a socket, and `CounterClient` reads snapshots from that socket.
 
-**Point your game at the SDK.** Livefire travels with its source, so
-clone it next to your game and add path dependencies to your
-`pubspec.yaml`:
+To use these packages in your own Dart game, clone Livefire beside your project and add these paths to your game’s `pubspec.yaml`. Then run `dart pub get`.
 
 ```yaml
 dependencies:
@@ -85,58 +44,17 @@ dependencies:
     path: ../livefire/packages/server_sdk
 ```
 
-Run `dart pub get` and look for `Got dependencies!`.
-
-**Part A — write the rules (`RoomAuthority`).** One class decides what is
-true in the room: who joined, what a button press does, what the state
-looks like. This is the only part you write — the counter from the demo:
+When a player presses the increment button, the client sends a command. The room calls `command` with the sender’s ID. On the next snapshot, every connected client sees the updated count.
 
 ```dart
-class CounterAuthority implements RoomAuthority {
-  final counters = <String, int>{};
-  @override
-  int capacity = 8, tick = 0;
-  @override
-  double elapsed = 0;
-  @override
-  void update(double seconds) {
-    elapsed += seconds;
-    tick++;
-  }
-
-  @override
-  Object? validateJoin(Map<String, dynamic> message) => null;
-  @override
-  void addPlayer(String id, String name, Object? data) => counters[id] = 0;
-  @override
-  void resume(String id, Object? data) {}
-  @override
-  void disconnect(String id) {}
-  @override
-  void removePlayer(String id) => counters.remove(id);
-  @override
-  Map<String, dynamic> welcome(String id) => {'sequence': 0};
-  @override
-  void command(String id, Map<String, dynamic> message) {
-    if (message['type'] == 'increment') counters[id] = counters[id]! + 1;
-  }
-  @override
-  Map<String, dynamic> snapshot() => {
-        'type': 'snapshot',
-        'epoch': 0,
-        'tick': tick,
-        'time': elapsed,
-        'players': {
-          for (final e in counters.entries) e.key: {'count': e.value},
-        },
-      };
-  @override
-  void dispose() {}
+// In CounterAuthority
+@override
+void command(String id, Map<String, dynamic> message) {
+  if (message['type'] == 'increment') counters[id] = counters[id]! + 1;
 }
 ```
 
-**Part B — host it (`RoomServer`).** Three lines and the room is a real
-server players connect to:
+Start a server with your authority. This example runs 60 simulation steps and sends 15 snapshots per second.
 
 ```dart
 import 'package:server_sdk/server_sdk.dart';
@@ -147,8 +65,7 @@ await server.start(port: 8790);
 print('room at ${server.localUri}');   // ws://127.0.0.1:8790/play/demo-room
 ```
 
-**Part C — connect players (`RoomClient`).** One subclass per game; the
-base class handles joining, reconnects, chat and state:
+Create a client and send the command. The client and server must use the same `protocolVersion`.
 
 ```dart
 import 'package:client/client.dart';
@@ -165,26 +82,9 @@ await alice.connect();                       // join handshake, first snapshot
 alice.sendControl({'type': 'increment'});    // a button press
 ```
 
-Repaint your UI from `onChanged` — it runs whenever anything changes (new
-message, someone joins, new state):
+<span id="3-chat-and-the-player-list"></span>
 
-```dart
-alice.onChanged = () {
-  print(alice.latest?.players);   // everyone's current state
-};
-```
-
-In a game or UI framework, create the client once, connect on startup,
-and repaint whenever `onChanged` fires. The room code does not change.
-
-The `protocolVersion` number must match on the server and every client —
-it is how rooms upgrade safely (`Incompatible game version` means it
-doesn't).
-
-## 3. Chat and the player list
-
-Every room — this one or any below — has chat built in. No chat server to
-run:
+## Chat and the player list
 
 ```dart
 alice.social.sendChat('hello world');        // to everyone
@@ -196,44 +96,30 @@ alice.onChanged = () {
 };
 ```
 
-The room enforces sane rules for you: 280 characters max, one line, 4
-messages per 10 seconds per player, hidden-character tricks rejected.
-The room's leader can also:
+Each player can send four single-line messages per ten seconds, up to 280 characters each. New arrivals receive the last 100 messages. Muting affects the local player’s view. The leader can kick a guest, lock the room, or ban a player with a verified account.
 
 ```dart
 alice.social.mute('p2', true);               // hide one player, my screen only
 alice.social.moderate('kick', playerId: 'p2');  // leader only
-alice.social.moderate('ban', playerId: 'p3');   // banned even after rejoining
+alice.social.moderate('ban', playerId: 'p3');   // account-bound for signed-in players
 alice.social.moderate('lock', locked: true);    // stop new joins
 ```
 
-## The hosted node (preview): rooms without a server
+<span id="4-put-the-server-on-the-internet"></span>
 
-Steps 4 and 5 below stand up your own node. If you would rather not run
-anything, a hosted node is **live in preview** at
-<https://play.holotype.com.sg> — the same server software as this
-repository, over the same API. Honesty up front about what "preview"
-means:
+## Host a server
 
-- **API keys are issued on request** — ask us; there is no self-serve
-  signup yet, and billing is not live. The self-hosted path below is
-  complete today. Self-serve keys exist as the [developer
-  panel](/docs/panel/) (`/panel`, sign in with Bluesky) on nodes that
-  enable it — including the hosted node as it rolls out.
-- The hosted node enforces an **origin allowlist** on WebSocket
-  upgrades (currently the docs site's origin). Browsers send `Origin`
-  automatically — tell us your game's origin when you get a key.
-  Non-browser clients must send a listed `Origin` header (Node's
-  built-in WebSocket sends none; the TypeScript SDK's README shows the
-  `socketFactory` escape hatch).
+The counter uses a custom Dart authority. To host rooms from JSON settings, [deploy a Livefire node](/docs/self-hosting/). Once your authenticated `GET /v1/rooms` returns `200`, you can create rooms from your backend.
 
-Create a room and mint tokens exactly like step 5, against the hosted
-base URL (`<your-api-key>` is the key we issue you — keep it
-server-side, never in client code):
+<span id="5-create-a-room-and-invite-players"></span>
+
+## Create a room and invite players
+
+Use the `DOMAIN` and `LIVEFIRE_API_KEY` shell variables from the hosting guide. For the preview node, set `DOMAIN=play.holotype.com.sg` and use your preview API key. This relay room gives each player a `pose` and lets the leader update the shared `phase`.
 
 ```sh
-curl -X POST https://play.holotype.com.sg/v1/rooms \
-  -H "Authorization: Bearer <your-api-key>" \
+curl --fail-with-body -X POST "https://$DOMAIN/v1/rooms" \
+  -H "Authorization: Bearer $LIVEFIRE_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
         "template": "relay",
@@ -250,90 +136,19 @@ curl -X POST https://play.holotype.com.sg/v1/rooms \
       }'
 ```
 
-The response shape is the same as step 5's (`roomId`, `roomKey`, `url`,
-`joinToken`, `joinTokenExpiresAt`, `creatorToken`). With the TypeScript
-SDK the whole backend is three lines and the client four:
-
-```ts
-// backend, per match (the API key stays on your server)
-const of = Livefire.admin(API_KEY, 'https://play.holotype.com.sg');
-const room = await of.createRoom({ template: 'relay', capacity: 16 });
-const { joinToken } = await of.mintToken(room, playerName);
-
-// client, per player
-const game = await Livefire.join({ url: room.url, joinToken, name: 'Sam' });
-```
-
-From Dart, `RoomClient` connects to the returned `url` (it already
-carries the token), like step 5 below. Self-hosting remains the
-local-development path — everything else on this page is the same
-software your node would run.
-
-## 4. Put the server on the internet
-
-Use the [Self-hosting quickstart](/docs/self-hosting/) to start the rooms
-server on your own Linux host. It walks through DNS, automatic HTTPS, and
-an authenticated API check. You can start with guest players and SQLite.
-
-Once your API check returns `200`, use your node's HTTPS origin and
-bootstrap API key to create rooms and mint player tokens.
-
-## 5. Create a room and invite players
-
-Rooms on the server are created through the API with a **settings file**
-that picks what kind of room it is. This one has chat plus shared state —
-each player owns a `pose` value, the room leader owns a `phase` value:
+A successful response has status `201`. Give the first player the returned `url` and `joinToken`. Keep the `creatorToken` for the player who will lead the room. For each additional player, replace `rm_9f3k2` below with the returned `roomId` and request a fresh token.
 
 ```sh
-curl --fail-with-body -X POST https://rooms.yourdomain.com/v1/rooms \
-  -H "Authorization: Bearer YOUR_SERVICE_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-        "template": "relay",
-        "config": {
-          "version": 1, "template": "relay", "capacity": 16, "chat": true,
-          "maxRows": 64, "totalBytes": 32768,
-          "playerKeys": {
-            "pose": { "maxBytes": 256, "publishesPerSecond": 10 }
-          },
-          "roomKeys": {
-            "phase": { "maxBytes": 64, "publishesPerSecond": 1 }
-          }
-        }
-      }'
+curl --fail-with-body -X POST "https://$DOMAIN/v1/rooms/rm_9f3k2/tokens" \
+  -H "Authorization: Bearer $LIVEFIRE_API_KEY"
 ```
 
-You get back a room address and a one-time join token:
-
-```json
-{
-  "roomId": "rm_9f3k2",
-  "url": "wss://rooms.yourdomain.com/play/7YPL-xKq3-...",
-  "joinToken": "jt_C1AA...",
-  "joinTokenExpiresAt": "2026-12-01T12:15:00Z",
-  "creatorToken": "ct_...",
-  "status": "live"
-}
-```
-
-One token comes with the room; each extra player needs their own (tokens
-are single-use):
-
-```sh
-curl --fail-with-body -X POST https://rooms.yourdomain.com/v1/rooms/rm_9f3k2/tokens \
-  -H "Authorization: Bearer YOUR_SERVICE_KEY"
-```
-
-Players connect with the same `RoomClient` from step 2 — the address now
-carries the token:
+Connect the Dart client using the URL and its token.
 
 ```dart
 final player = Player(Uri.parse('$roomUrl?token=$joinToken'), 'Alice');
 await player.connect();
 ```
-
-Chat (step 3) works the same. Each player updates their own values, and
-everyone sees everyone's:
 
 ```dart
 player.sendControl({
@@ -348,65 +163,48 @@ player.onChanged = () {
 };
 ```
 
-That is the whole loop: create a room from settings, hand out tokens,
-players chat and share state.
+With TypeScript, the [SDK](https://github.com/HolotypePteLtd/livefire/tree/master/sdk/typescript) provides separate backend and client calls.
 
-## Two kinds of rooms: who decides what's true
+```ts
+// Game backend
+import { Livefire } from 'openfire-sdk';
 
-The settings file picks one of two room types, and the real difference
-between them is not what they do but **who decides what's true**. It is
-the answer to the one question every developer asks: *can players
-cheat?*
+const api = Livefire.admin(API_KEY, NODE_URL);
+const room = await api.createRoom({ template: 'relay', capacity: 16 });
+// Send room.url and room.joinToken to the first player.
+const { joinToken } = await api.mintToken(room); // For the next player.
+```
 
-- **Shared-state rooms: the players decide.** Each player publishes
-  their own values; the server checks the format and size and relays
-  it to everyone, but never judges the content. A hacked client can
-  claim anything — so use these for social spaces, chat, lobbies,
-  casual co-op: anything where cheating doesn't ruin the game. Nearly
-  free to host.
-- **Physics rooms: the server decides.** Players send only inputs
-  (buttons). The server owns a physics world built from your settings,
-  runs the simulation and broadcasts the results. A hacked client can
-  claim anything; the server moves you only as far as your speed
-  allows and never through a wall. Costs CPU per room. Required for
-  anything competitive.
+```ts
+// Game client, using the URL and token received from your backend
+import { Livefire } from 'openfire-sdk';
 
-|  | Shared state | Physics |
-| --- | --- | --- |
-| Who decides | the players | the server |
-| Cheating | possible — fine for casual | gets nothing |
-| Cost to host | nearly free | CPU per room |
-| Setup | one settings file | one settings file |
+const game = await Livefire.join({ url, joinToken, name: 'Sam' });
+game.chat.send('hello');
+```
 
-## Where to go next
+See [shared state rooms](/docs/shared-state-rooms/) for ownership and quotas or [physics rooms](/docs/physics-rooms/) for server-simulated movement.
 
-- **[Shared state rooms](/docs/shared-state-rooms/)** — the players
-  decide: every settings field, reading everyone's state, leader-only
-  values.
-- **[Physics rooms](/docs/physics-rooms/)** — the server decides:
-  players walk and jump in a world you describe; the server computes
-  every position, so cheating can't help.
-- **[Player accounts](/docs/accounts/)** — sign in with Bluesky: real
-  names and avatars, bans that stick to the account.
-- **[How it works](/docs/how-it-works/)** — the one-page plain-words
-  explanation, for the "wait, but why?" moments.
+<span id="the-hosted-node-preview-rooms-without-a-server"></span>
 
-## Things people get stuck on
+## Hosted preview
 
-- **`Got dependencies!` never appears** — the `path:` lines must point at
-  your clone of the repository (a folder next to your game).
-- **`Incompatible game version`** — `protocolVersion` differs between
-  server and client; make them equal.
-- **`Timed out` after `[server] room listening …`** — the players could
-  not reach the room. The demo only needs `127.0.0.1`, so a firewall or
-  antivirus blocking localhost sockets is the usual cause.
-- **The HTTPS step fails with a DNS error** — the address record hasn't
-  propagated yet. Check that it resolves to your server and that
-  inbound TCP ports 80 and 443 are open.
-- **Rooms work but Bluesky sign-in refuses** — `publicBaseUrl` is missing
-  `https://`. It must be the full `https://rooms.yourdomain.com`.
-- **Lost `node.json` or `.env`** — join tokens stop validating. Back both
-  up; they are your server's identity.
+If you have a preview API key, use `https://play.holotype.com.sg` as the node origin. Request a key and have the operator add your game’s web origin to the allowlist. Browsers send `Origin` automatically. For a native client, set an allowed `Origin` on the WebSocket handshake. The [TypeScript SDK README](https://github.com/HolotypePteLtd/livefire/tree/master/sdk/typescript) shows how to supply a socket factory.
 
-Want to poke a live room yourself — chat, press +1, watch the ticks?
-[Open the standalone demo.](/demo/)
+## Watch two players share one world
+
+Click the blue player’s view. Use WASD or the arrow keys to move and hold Shift to run. The red player is a bot. Both views receive positions from the same room engine, running in a third frame in your browser. The frames communicate over `BroadcastChannel`. This demo requires WebAssembly GC.
+
+<div class="world-demo-grid" id="world-demo-frames"></div>
+<script src="/world/orchestrator.js" defer></script>
+
+<span id="things-people-get-stuck-on"></span>
+
+## Troubleshooting
+
+| Symptom | What to check |
+| --- | --- |
+| `dart pub get` cannot find a package | The paths in `pubspec.yaml` are relative to your game project. |
+| `Incompatible game version` | Compare the client and server values for `protocolVersion`. |
+| The example prints `Timed out` | Check that local processes can reach the loopback address printed by the server. |
+| The node’s HTTPS check fails | Check that your domain resolves to the host and that TCP ports 80 and 443 are open. |

@@ -1,29 +1,11 @@
 ---
-title: Identity ladder
-description: Let players start instantly as guests, keep progress with a device keypair, recover it on a new device — and upgrade later.
+title: Device accounts and recovery
+description: Create player accounts on your PDS and recover a session using a device key.
 ---
 
-For a game, identity is a ladder — every rung should be climbable
-*while playing*, and nobody should be asked to sign up on day 0:
+If your game needs a persistent player ID before sign-up, Livefire can create an account on your PDS. The first time the game runs, the SDK generates an ES256 key pair and sends the public key to the node. The node returns the account’s DID, handle, and session. On later launches, the SDK can use the private key to recover the same DID.
 
-1. **Day 0 — play immediately.** The game generates a **device
-   account** on the player's machine: an `anon-…` guest handle on your
-   rooms server, zero signup, zero prompts. The player is in the room
-   in one round-trip.
-2. **Their key, their progress.** Alongside the account the client
-   generates an ES256 **recovery keypair**. The private half never
-   leaves the device (it is stored encrypted in IndexedDB — the SDK
-   does this for you). Lose the session — new device, cleared browser
-   storage — and the key still proves who they are.
-3. **Recover.** The client asks the server for a single-use challenge,
-   signs it with the recovery key, and gets a fresh session for the
-   **same account ID**. Progress and bans follow.
-4. **Upgrade later (designed, not shipped yet).** Password/e-mail and
-   linking a Bluesky account slot into the same ladder — recovery keys
-   keep working.
-
-This page is about the client + server pieces that ship today: the
-`/ident/*` routes on a rooms node and the TypeScript SDK surface.
+For players who already have an AT Protocol account, [enable sign-in with their existing handle](/docs/accounts/).
 
 ## What your server needs
 
@@ -66,7 +48,7 @@ If you enabled player OAuth sign-in, use
 [both Compose files](/docs/accounts/#2-turn-sign-in-on-in-nodejson)
 when recreating the node. Device-account creation is rate-limited per IP.
 
-## The routes
+## HTTP routes
 
 | Route | What it does |
 | --- | --- |
@@ -74,81 +56,33 @@ when recreating the node. Device-account creation is rate-limited per IP.
 | `GET /ident/nonce?did=…` | A single-use challenge nonce for that DID (short TTL). |
 | `POST /ident/recover` `{did, nonce, assertion, room?}` | The nonce + an ES256 signature over `{iss, sub, nonce, iat}` by the recovery key → a fresh session for the same DID (and a panel session too, if that DID is one of your panel admins). |
 
-`session` is a `gs_` token — a bearer credential the SDK caches. The
-recovery key is checked every time a session is re-minted, so a lost
-session is never a lost account.
+The SDK caches the `gs_` session token. To renew a session, the client signs a single-use nonce with its recovery key. The server verifies the signature against the public key it registered for that DID.
 
 ## In the TypeScript SDK
+
+Call `create` when the game starts. Set `host` to the Livefire node’s HTTPS origin. The node contacts the PDS on the client’s behalf.
 
 ```ts
 import { Livefire, openKeystore } from 'openfire-sdk';
 
-// Day 0 — one call on every boot: creates the account on first launch,
-// revives it afterwards (cached session, or a recovery proof).
+const host = 'https://play.example.com';
+const keystore = openKeystore();
 const account = await Livefire.deviceAccount.create({
-  host: 'https://play.example.com', // Your Livefire node URL
-  roomKey: room.roomKey,   // optional: mint a join token immediately
-  keystore: openKeystore(), // default: encrypted IndexedDB
+  host, keystore, roomKey: room.roomKey,
 });
-
-// Play — the same Room surface as Livefire.join().
 const game = await account.joinRoom({ roomKey: room.roomKey, name: 'Sam' });
-
-// New device / cleared storage: the sealed keystore record is all that
-// must survive. Same did, fresh session.
-const back = await Livefire.deviceAccount.recover({
-  host: 'https://play.example.com',
-  keystore: openKeystore(), // reads the surviving record
-});
 ```
 
-A wrong key cannot recover an account: the server checks the signature
-against the stored public key and refuses (403), and every nonce dies
-on first use — replays fail.
+### Recover a session
 
-### Passphrase or not
+Call `recover` with the keystore containing the account’s key. On a new device, first restore the saved keystore record. Clearing browser storage removes the default IndexedDB record. If that was the only copy, the player can no longer recover this DID through the SDK.
 
-The keystore encrypts the private key either way (AES-GCM):
+```ts
+const account = await Livefire.deviceAccount.recover({ host, keystore });
+```
 
-- **No passphrase (v1 default):** the wrapping key is a random device
-  key stored beside the encrypted blob. This protects the key material
-  from casual export and copy-paste leakage — but an attacker who can
-  read the browser storage wholesale gets both halves. Convenient;
-  honest about what it is.
-- **With a passphrase:** `openKeystore({ passphrase })` derives the
-  wrapping key with PBKDF2 (150k iterations, per-record salt). A stolen
-  storage blob is then useless without the passphrase — at the cost of
-  asking the player for one.
+### Protect the saved key
 
-The recovery *protocol* is identical either way; the passphrase only
-hardens storage. (A stolen *device* is a later rung — the Bluesky link
-upgrade is what protects against that.)
+By default, the SDK encrypts the record with AES-GCM and stores the wrapping key alongside it. Anyone who can read the whole record can decrypt it. To require a passphrase, call `openKeystore({ passphrase })` at creation and recovery. The SDK derives the wrapping key from the passphrase and a per-record salt using PBKDF2 (150,000 iterations).
 
-## Trust note
-
-The node operator holds the PDS-level rotation key and therefore
-outranks the client recovery key at the PDS layer — v1 guarantees are
-app-level (recovery from session loss), not protection against a
-malicious operator. Same trust level as Bluesky itself today. The
-operator also holds each guest account's generated password (that is
-what lets the node write into the player's repo) — a guest device
-account is the operator's account in exactly the way a Bluesky account
-is the PDS operator's to administer.
-
-Concretely: a malicious operator could take over a device account at
-the PDS layer, and recovery keys do not defend against that. What they
-do guarantee — and what the tests pin — is that session loss, device
-change and cleared storage never lose the account, and that nobody
-*else* can claim it through the `/ident` routes.
-
-## Upgrade paths (designed, later slices)
-
-- **Password / e-mail** — an additional recovery factor above the
-  keypair, for players who will not manage keys.
-- **Bluesky link** — the existing Bluesky sign-in attaches to the same
-  DID: real handle and avatar on the player list, bans across
-  identities. The recovery key keeps working alongside it.
-
-Self-hosting details (PDS service-level account creation, persistence
-modes) live in [Identity](/docs/identity/) and
-[Self-hosting](/docs/self-hosting/).
+The node operator retains the generated PDS account password and the PDS operator controls account rotation. The device key proves identity to Livefire within that trust relationship. Password resets by email and linking a device account to an existing Bluesky account are planned features.

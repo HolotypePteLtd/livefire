@@ -1,15 +1,15 @@
 # Room Templates & Config Schema (v1)
 
-A **room template** is a built-in server authority configured entirely with JSON — no server code required. Submit a config to `POST /v1/rooms`, and Livefire validates it, pins it verbatim, and runs the room.
+Pass the template name and its JSON configuration to `POST /v1/rooms`. The server validates the configuration and saves it with the room.
 
 ---
 
 ## Choosing a template
 
-| Template | Who decides truth? | How clients interact | Best for |
+| Template | Who supplies state? | How clients interact | Best for |
 | :--- | :--- | :--- | :--- |
 | **`relay`** | **Players** (quota-enforced) | Publish JSON values to declared `playerKeys` / `roomKeys` | Casual games, lobbies, presence, turn-based state |
-| **`physics`** | **Server** (ReactPhysics3D) | Send directional/action inputs; server simulates poses | Competitive movement, obstacle worlds, anti-cheat |
+| **`physics`** | **Server** (ReactPhysics3D) | Send directional/action inputs; server simulates poses | Games with server-simulated movement and collisions |
 
 ```text
   Relay room                                   Physics room

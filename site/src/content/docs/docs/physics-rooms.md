@@ -1,31 +1,13 @@
 ---
 title: Physics rooms
-description: Players walk, run and jump in a world you describe in a settings file. The server computes every position, so cheating can't help.
+description: Configure colliders, movement, and input limits for a server-simulated room.
 ---
 
-A physics room is a 3D space where players move around — walking,
-running, jumping — and nobody can teleport or speed-hack, because **the
-server** decides where everyone is. You describe the world (floor, walls,
-hills) and the controls in one settings file. No game server code.
-
-The guarantee, stated plainly: **the server computes every position.**
-Your game sends only inputs — buttons and joystick directions. A hacked
-client can send anything it likes; the server moves you only as far as
-your speed allows and never through a wall. Cheating gets nothing.
-That is what makes physics rooms the type to use for anything
-competitive. It costs the server CPU per room; for casual games where
-cheating doesn't matter, [shared state rooms](/docs/shared-state-rooms/)
-are nearly free — there the players decide.
-
-This page continues [Instant multiplayer server](/docs/multiplayer-server/)
-(that page covers running the server, creating rooms and connecting).
-Any language works: movement inputs are plain JSON frames over a
-WebSocket — [Writing a client in any language](/docs/protocol-clients/).
+Clients send movement inputs. The server applies the configured speed and collision rules, then sends each player’s position back to the clients. Use a physics room when the game depends on where a player can move.
 
 ## Describe your world
 
-Save this as `physics-room.json` — a small playable room: a big floor,
-one pillar, and standard controls:
+Save this example as `physics-room.json`. It defines a floor, a pillar, and one spawn point.
 
 ```json
 {
@@ -63,7 +45,7 @@ one pillar, and standard controls:
 }
 ```
 
-### Every field, in plain words
+### Configuration fields
 
 | Field | What it means |
 | --- | --- |
@@ -95,13 +77,7 @@ curl -X POST https://rooms.yourdomain.com/v1/rooms \
   -d "{\"template\": \"physics\", \"config\": $(cat physics-room.json)}"
 ```
 
-This starts your world on the server. You get back a `url` and a one-time
-`joinToken` (create more with the tokens call — same as
-[creating a relay room](/docs/multiplayer-server/#5-create-a-room-and-invite-players)).
-The same call works against the [hosted preview
-node](/docs/multiplayer-server/#the-hosted-node-preview-rooms-without-a-server)
-— base URL `https://play.holotype.com.sg`, API key on request; physics
-rooms are enabled on it.
+Expect `201` and a room URL and one-time join token. [Mint another token](/docs/multiplayer-server/#create-a-room-and-invite-players) for each additional player.
 
 ## Send controls from your game
 
@@ -119,11 +95,9 @@ player.sendControl({
 });
 ```
 
-That is the whole client side: read your controller, send the buttons.
-The server remembers your buttons between updates — you only need to send
-when they change or a few times a second.
+The server retains the last input until it receives an update. Send another input when the player releases a button.
 
-## Draw everyone where the server says they are
+## Render player positions
 
 ```dart
 player.onChanged = () {
@@ -135,18 +109,6 @@ player.onChanged = () {
 };
 ```
 
-Every player's `pose`, updated `snapshotHz` times a second. Your assigned
-spawn point also arrives in the welcome message when you join.
+Read `pose` from each snapshot. At `snapshotHz: 20`, the server sends positions about every 50 ms. The Dart client’s `sampleTimeline` can interpolate between updates. The welcome message includes the player’s assigned spawn point. When a client disconnects, the server clears its inputs.
 
-## Good to know
-
-- **Cheating does not help.** Buttons are only *requests*; the server
-  clamps every value into the range you declared and does the actual
-  moving. A hacked client can at most walk.
-- If a player drops, their character slows to a stop (the server clears
-  their buttons).
-- Positions arrive rounded to 4 decimal places, about every 50 ms at
-  20 Hz; the client SDK can smooth between updates for you
-  (`sampleTimeline`).
-- Full schema, heightfields and every rule: [the templates
-  reference](/docs/templates/).
+See the [template reference](/docs/templates/) for heightfields and the complete schema.
