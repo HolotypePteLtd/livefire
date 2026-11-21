@@ -27,37 +27,44 @@ This page is about the client + server pieces that ship today: the
 
 ## What your server needs
 
-Device accounts are created on **your PDS** (the account server), so
-the node needs an `ident` block in `node.json`:
+To create device accounts on an existing reference PDS, add an
+`ident` block to the Livefire node’s `node.json`:
 
 ```json
 "ident": {
   "pdsUrl": "https://pds.example.com",
   "serviceKey": "…",
-  "handleDomain": "play.example.com"
+  "handleDomain": "pds.example.com"
 }
 ```
 
-- `pdsUrl` — your PDS.
-- `serviceKey` — the **PDS admin password** (`PDS_ADMIN_PASSWORD`).
-  This is required, and it is all the node needs: guest creation rides
-  the admin path every stock reference PDS supports (no special PDS
-  build). For each guest account the node mints a single-use invite
-  code as the admin (`createInviteCode`, basic auth) and then calls
-  `createAccount` with `{handle, password, inviteCode}` — the same
-  thing `pdsadmin account create` does. The generated password is
-  stored by the node (never shown to the player) so it can write
-  things like match records into the guest's repo later.
-- `handleDomain` — where the auto-generated guest handles live:
-  `anon-<6 random>.<handleDomain>`. The `anon-` namespace plus a guest
-  flag in the node's database keep guest accounts distinguishable from
-  upgraded ones later. Defaults to your `publicBaseUrl` host.
-- Optional: `nonceTtlSeconds` (default 300) and
-  `sessionTtlSeconds` (default 30 days).
+- `pdsUrl` is the PDS’s HTTPS origin, reachable from the Livefire node.
+- `serviceKey` is the PDS admin password (`PDS_ADMIN_PASSWORD`). Store it
+  in the node’s private configuration. Livefire uses it to mint a
+  single-use invite, then creates the account with a generated password.
+- `handleDomain` is the suffix for generated handles such as
+  `anon-xxxxxx.pds.example.com`. Query your PDS to find its allowed suffixes:
 
-Without the block, every `/ident` route is a 404 and nothing else
-changes. Account creation is rate-limited per IP like the rest of the
-node's public surface.
+  ```sh
+  curl -fsS https://pds.example.com/xrpc/com.atproto.server.describeServer
+  ```
+
+  Pick a suffix from `availableUserDomains` and omit its leading dot in
+  `handleDomain`. Configure wildcard DNS and HTTPS routing for the
+  generated handles as described in the
+  [reference PDS setup guide](https://github.com/bluesky-social/pds#configure-dns-for-your-domain).
+- `nonceTtlSeconds` defaults to 300. `sessionTtlSeconds` defaults to
+  30 days.
+
+Recreate the node container to load the configuration:
+
+```sh
+docker compose up -d --force-recreate rooms-node
+```
+
+If you enabled player OAuth sign-in, use
+[both Compose files](/docs/accounts/#2-turn-sign-in-on-in-nodejson)
+when recreating the node. Device-account creation is rate-limited per IP.
 
 ## The routes
 
@@ -79,7 +86,7 @@ import { Livefire, openKeystore } from 'openfire-sdk';
 // Day 0 — one call on every boot: creates the account on first launch,
 // revives it afterwards (cached session, or a recovery proof).
 const account = await Livefire.deviceAccount.create({
-  host: 'https://play.example.com',
+  host: 'https://play.example.com', // Your Livefire node URL
   roomKey: room.roomKey,   // optional: mint a join token immediately
   keystore: openKeystore(), // default: encrypted IndexedDB
 });

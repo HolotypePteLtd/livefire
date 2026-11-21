@@ -98,6 +98,25 @@ restart. Live simulation state is held in memory.
 For Bluesky sign-in and the developer panel, see [Player accounts](/docs/accounts/).
 Supabase is optional and is covered [below](#platform-data-in-supabase).
 
+## Already run a PDS?
+
+An existing AT Protocol Personal Data Server (PDS) can support player
+sign-in, guest account creation, or both.
+
+- **Sign in players who already have accounts.** Follow the
+  [AT Protocol sign-in setup](/docs/accounts/#2-turn-sign-in-on-in-nodejson).
+  Players use their existing handles. Livefire looks up each handle,
+  finds its PDS in the account’s DID document, and sends the player to
+  that server’s OAuth provider. Keep the default handle resolver if it
+  can resolve your players’ handles.
+- **Create guest accounts on your PDS.** Add the
+  [`ident` block](/docs/identity-ladder/#what-your-server-needs) to
+  `node.json`. Set `pdsUrl` to your existing PDS’s HTTPS origin,
+  `serviceKey` to its admin password, and `handleDomain` to a suffix
+  that PDS accepts. Follow the linked DNS and restart steps, then try
+  [creating a device account](/docs/identity-ladder/#in-the-typescript-sdk)
+  from your game client.
+
 ## Server config reference (`node.json`)
 
 | Field | Type | Default / rule | Meaning |

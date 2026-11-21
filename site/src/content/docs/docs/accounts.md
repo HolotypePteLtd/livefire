@@ -54,11 +54,15 @@ docker compose -f docker-compose.yml -f docker-compose.atproto.yml up -d --force
 Use both Compose files for subsequent updates to an OAuth-enabled node.
 For a native process, set `jwksPath` to the private file on that host.
 
-This adds "sign in with Bluesky" next to normal guest entry. `guest`
-stays first, so nothing changes for players who skip sign-in. When a
-player signs in, Bluesky's network confirms their account and hands your
-server their account ID (called a DID — Bluesky's name for an account ID
-on its network).
+Players can sign in with an existing AT Protocol account, including one
+on a self-hosted PDS. Livefire uses `auth.atproto.entrywayUrl` to resolve
+the handle, then reads the account’s DID document to find its PDS.
+The player approves sign-in with that PDS’s OAuth provider. If you run
+your own handle resolver, set `entrywayUrl` to its HTTPS origin. It
+must implement `com.atproto.identity.resolveHandle`.
+
+See [using an existing PDS](/docs/self-hosting/#already-run-a-pds)
+to set up guest account creation.
 
 ## 3. Add the button to your site
 
@@ -69,8 +73,8 @@ and the room key:
 https://rooms.example.com/auth/start?handle=alice.bsky.social&room=7YPL-xKq3-...
 ```
 
-The server sends the player to Bluesky's own sign-in screen and then
-hands your game a join token tied to their account ID. (Your site can
+Livefire sends the player to their account provider’s sign-in screen
+and then hands your game a join token tied to their account ID. (Your site can
 watch for the result at `/auth/result` — the exact endpoints are in the
 [Identity reference](/docs/identity/).)
 

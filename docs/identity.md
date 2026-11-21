@@ -98,13 +98,14 @@ For games that want persistent player IDs with **zero signup screen**:
   "ident": {
     "pdsUrl": "https://pds.example.com",
     "serviceKey": "your-pds-admin-password",
-    "handleDomain": "play.example.com",
+    "handleDomain": "pds.example.com",
     "nonceTtlSeconds": 300,
     "sessionTtlSeconds": 2592000
   }
 }
 ```
 
+- Use a handle suffix listed in your PDS's `com.atproto.server.describeServer` response under `availableUserDomains`. Omit the leading dot in `handleDomain`.
 - The node creates accounts on your stock AT Protocol PDS via `com.atproto.server.createInviteCode` (Basic auth `admin:<serviceKey>`) + `com.atproto.server.createAccount`.
 - Recovery public keys (`recovery_keys`) and generated guest credentials (`guest_credentials`) persist in both SQLite and Supabase Postgres modes (`supabase/migrations/0002` & `0003`).
 - In TypeScript, use `Livefire.deviceAccount.create()` / `Livefire.deviceAccount.recover()` from `sdk/typescript/src/identity.ts` (includes encrypted IndexedDB keystore).

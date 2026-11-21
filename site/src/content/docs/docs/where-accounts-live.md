@@ -82,27 +82,15 @@ that is the default.
 
 ### 3. Your own account server (self-hosted PDS)
 
-Two quite different cases:
+Players with accounts on a self-hosted PDS can use the normal
+[AT Protocol sign-in flow](/docs/accounts/). Livefire can also create
+recoverable guest device accounts on a PDS you operate. For the setup
+for both paths, see [Already run a PDS?](/docs/self-hosting/#already-run-a-pds).
 
-**a. A PDS for your own service accounts (the realistic case).** Your
-game's rooms server gets its own account — on your own PDS — and
-publishes things like room listings or signed match records through
-that account, instead of depending on Bluesky's servers. Small and
-controlled: usually one or two accounts, no player data.
-
-**b. Players' accounts on your PDS.** You offer sign-up on your own
-server, or players move their accounts to it. You get full custody of
-account data — data stays in a country or company you choose, backups
-are yours. The cost is operating account infrastructure: storage,
-backups, uptime, abuse handling. Most games never need this.
-
-- **Key property, either way:** your game code does not change. Sign-in,
-  bans and profiles work identically wherever the account lives,
-  because the server verifies the account ID itself — the same
-  verification code runs against Bluesky's PDS or yours.
-- **When you need it.** Case (a) once your game publishes public
-  records in its own name; case (b) only when a specific requirement
-  (data residency, a closed community) forces it.
+The PDS operator manages account storage, backups, uptime, and abuse
+handling. Livefire’s implemented match-event publishing flow uses a
+consenting player’s account. Publishing through a game-owned service
+account is planned.
 
 ### 4. Your own sign-in (self-hosted auth — leaving AT Protocol)
 
@@ -127,14 +115,10 @@ backups, uptime, abuse handling. Most games never need this.
 
 ## Summary
 
-Players' accounts live on AT Protocol servers — usually Bluesky's — and
-you never host those and never store passwords. Bluesky's public
-services are used by default with no setup; running your own broadcast
-copy is an optional scale upgrade that still sees only public data.
-Running your own account server is optional too — worth it for your
-game's own service accounts, and invisible to players either way.
-Leaving AT Protocol for your own sign-in is a real cost with no
-benefit unless a customer requires it.
+Players can join as guests with a one-time token or sign in with an
+existing AT Protocol account. For recoverable device accounts, connect a
+PDS you operate. Livefire stores the generated credentials for the device
+accounts it creates.
 
 ---
 
