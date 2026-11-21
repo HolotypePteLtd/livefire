@@ -105,6 +105,8 @@ alice.social.moderate('ban', playerId: 'p3');   // account-bound for signed-in p
 alice.social.moderate('lock', locked: true);    // stop new joins
 ```
 
+For microphone chat, connect a voice service to the room. [Voice chat and spatial audio](/docs/voice-chat/).
+
 <span id="4-put-the-server-on-the-internet"></span>
 
 ## Host a server

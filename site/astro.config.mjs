@@ -51,6 +51,7 @@ export default defineConfig({
         { label: 'Rooms', items: [
           { label: 'Shared state rooms', link: '/docs/shared-state-rooms/' },
           { label: 'Physics rooms', link: '/docs/physics-rooms/' },
+          { label: 'Voice chat and spatial audio', link: '/docs/voice-chat/' },
           { label: 'How rooms work', link: '/docs/how-it-works/' },
           { label: 'Write a WebSocket client', link: '/docs/protocol-clients/' },
         ] },

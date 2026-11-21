@@ -111,4 +111,6 @@ player.onChanged = () {
 
 Read `pose` from each snapshot. At `snapshotHz: 20`, the server sends positions about every 50 ms. The Dart client’s `sampleTimeline` can interpolate between updates. The welcome message includes the player’s assigned spawn point. When a client disconnects, the server clears its inputs.
 
+You can use that same pose to play a speaker’s voice at their avatar. [Spatial audio guide](/docs/voice-chat/#play-a-voice-at-its-avatar).
+
 See the [template reference](/docs/templates/) for heightfields and the complete schema.

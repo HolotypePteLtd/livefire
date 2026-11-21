@@ -8,7 +8,7 @@ const site = fileURLToPath(new URL('../', import.meta.url));
 const docsDir = path.join(site, 'src/content/docs/docs');
 const guides = [
   'index.mdx', 'multiplayer-server.md', 'self-hosting.md', 'panel.md',
-  'shared-state-rooms.md', 'physics-rooms.md', 'how-it-works.md', 'protocol-clients.mdx',
+  'shared-state-rooms.md', 'physics-rooms.md', 'voice-chat.md', 'how-it-works.md', 'protocol-clients.mdx',
   'accounts.md', 'identity-ladder.md', 'where-accounts-live.md',
   'api.mdx', 'templates.mdx', 'protocol.mdx', 'identity.mdx',
 ];
