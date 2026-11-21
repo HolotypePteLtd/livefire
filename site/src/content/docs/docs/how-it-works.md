@@ -22,6 +22,8 @@ Use the Dart `server_sdk` package to host rooms. Add `livefire_atproto_server` f
 
 ## Familiar examples
 
+**VRChat.** Imagine Alice and Bob both visit the same café world. To see each other across the table, they have to join the same *instance*. A Livefire **room** corresponds to that instance. Your game supplies the café scene, and each room tracks the players visiting it together. [VRChat’s guide to instances](https://wiki.vrchat.com/wiki/Instances).
+
 **World of Warcraft.** Picture two parties entering the Deadmines. In a game built with Livefire, each party’s dungeon run could be a separate **room**. When one party defeats a boss, the other party can still be fighting it. A single **node** could host both runs. [Blizzard’s dungeon guide](https://news.blizzard.com/en-us/article/24095666/unveiling-cataclysm-classic-zones-dungeons-and-pvp-season-9).
 
 **Second Life.** A resident can build a home on a parcel of land and invite friends over. To build a neighbourhood like that with Livefire, your game would save the houses and their locations. The **room** handles the visit, so Alice can see Bob walk through her front door. A new room can load the same houses when they meet again. [Second Life’s land guide](https://secondlife.com/land).
