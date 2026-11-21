@@ -6,10 +6,8 @@ const quickstart = `import { Livefire } from 'openfire-sdk';
 const game = await Livefire.join({ url, joinToken, name: 'Alice' });
 game.chat.send('Hello!');`;
 const agentDocs = new URL('/llms-full.txt', Astro.site);
-const agentPrompt = `Integrate hosted Livefire into this project.
-Read ${agentDocs}
-
-Inspect the existing backend and client. Add a flow that creates one room and joins it from two clients with separate one-time tokens. Keep LIVEFIRE_API_KEY on the backend. Show me how to configure and test it.`;
+const agentPrompt = `integrate Livefire into this project for real-time multiplayer
+${agentDocs}`;
 ---
 
 <!doctype html>
@@ -17,7 +15,7 @@ Inspect the existing backend and client. Add a flow that creates one room and jo
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="color-scheme" content="dark light" />
     <title>Livefire — Hosted multiplayer rooms</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={new URL('/', Astro.site)} />
@@ -26,7 +24,8 @@ Inspect the existing backend and client. Add a flow that creates one room and jo
       try {
         const theme = localStorage.getItem('starlight-theme');
         if (theme === 'light' || theme === 'dark') document.documentElement.style.colorScheme = theme;
-      } catch { /* Use the system theme when storage is unavailable. */ }
+        if (theme === '') document.documentElement.style.colorScheme = 'light dark';
+      } catch { /* Use the landing page theme when storage is unavailable. */ }
     </script>
   </head>
   <body>
@@ -53,8 +52,7 @@ Inspect the existing backend and client. Add a flow that creates one room and jo
           </div>
 
           <div class="snippets">
-            <section class="snippet" aria-labelledby="quickstart">
-              <h2 id="quickstart">Join a room in TypeScript</h2>
+            <div class="snippet">
               <div class="snippet-box">
                 <pre aria-label="TypeScript client example" tabindex="0"><code id="quickstart-code">{quickstart}</code></pre>
                 <button type="button" class="copy-button" data-copy="quickstart-code" aria-label="Copy code" title="Copy code" hidden>
@@ -62,10 +60,10 @@ Inspect the existing backend and client. Add a flow that creates one room and jo
                 </button>
               </div>
               <span class="visually-hidden" role="status"></span>
-            </section>
+            </div>
 
             <section class="snippet" aria-labelledby="coding-agents">
-              <h2 id="coding-agents">Prompt for your coding agent</h2>
+              <h2 id="coding-agents">or copy prompt for your coding agent</h2>
               <div class="snippet-box">
                 <p class="agent-prompt" id="agent-prompt">{agentPrompt}</p>
                 <button type="button" class="copy-button" data-copy="agent-prompt" aria-label="Copy prompt" title="Copy prompt" hidden>
@@ -143,11 +141,12 @@ Inspect the existing backend and client. Add a flow that creates one room and jo
       }
 
       const select = document.querySelector<HTMLSelectElement>('#theme')!;
-      select.value = document.documentElement.style.colorScheme || 'auto';
+      const initialScheme = document.documentElement.style.colorScheme;
+      select.value = initialScheme === 'light dark' ? 'auto' : initialScheme || 'dark';
       document.querySelector<HTMLLabelElement>('#theme-control')!.hidden = false;
       select.addEventListener('change', () => {
         const mode = select.value === 'auto' ? '' : select.value;
-        document.documentElement.style.colorScheme = mode;
+        document.documentElement.style.colorScheme = mode || 'light dark';
         try { localStorage.setItem('starlight-theme', mode); } catch { /* Apply for this page. */ }
       });
     </script>
