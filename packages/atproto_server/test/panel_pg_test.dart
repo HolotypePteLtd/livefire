@@ -1,11 +1,12 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:livefire_atproto_server/livefire_atproto_server.dart';
 import 'package:server_sdk/server_sdk.dart';
 import 'package:test/test.dart';
 
 import 'atproto_world.dart';
-import 'supabase_stub.dart';
+import '../../server_sdk/test/supabase_stub.dart';
 
 const apiKey = 'sk_test_node';
 
@@ -297,7 +298,7 @@ class _PgNode {
       tokens: tokens,
       atproto: provider,
     );
-    final bound = RoomsListener(
+    final bound = AtprotoRoomsListener(
       supervisor: supervisor,
       api: api,
       store: store,
@@ -370,7 +371,7 @@ class _SqlitePanelNode {
       tokens: tokens,
       atproto: provider,
     );
-    final bound = RoomsListener(
+    final bound = AtprotoRoomsListener(
       supervisor: supervisor,
       api: ControlPlaneApi(
         supervisor: supervisor,

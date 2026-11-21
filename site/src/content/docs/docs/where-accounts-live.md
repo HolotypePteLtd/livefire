@@ -15,10 +15,10 @@ The example config uses Bluesky’s public resolver and the public PLC directory
 
 An ordinary guest joins with a one-time room token. This requires no PDS. For a player who needs a persistent DID before signing up, Livefire can provision a device account on a PDS you operate. The node stores that account’s generated credentials, and the game client stores its recovery key. You’re responsible for the PDS’s storage, backups, and availability. See [Use an existing PDS](/docs/self-hosting/#already-run-a-pds).
 
-## Other identity services
+## Public records and streams
 
-**Jetstream** distributes public AT Protocol events. Livefire currently refreshes profiles using a cache. There is no Jetstream endpoint to configure.
+Signing in gives the room a verified player ID. Public match records require a separate, consented write to that player’s PDS. A player using their own PDS gets the record there. [Match event guide](https://github.com/HolotypePteLtd/livefire/blob/master/docs/match_events.md).
 
-**Custom sign-in** such as an existing company login requires a server integration. The built-in room sign-in providers are `guest` and `atproto`.
+Jetstream lets other applications follow public record changes. Livefire’s room traffic stays on the room connection. There is no Jetstream service to configure. [Where data goes](/docs/how-it-works/#where-data-goes).
 
-**Match publishing** uses a consenting player’s account. Publishing through a game-owned service account is planned. See the [match event guide](https://github.com/HolotypePteLtd/livefire/blob/master/docs/match_events.md).
+Custom sign-in, such as an existing company login, requires a server integration. The built-in options are `guest` and `atproto`.

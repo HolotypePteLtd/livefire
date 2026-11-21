@@ -257,6 +257,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.1.0"
+  livefire_atproto_server:
+    dependency: "direct main"
+    description:
+      path: "../atproto_server"
+      relative: true
+    source: path
+    version: "0.1.0"
   logging:
     dependency: transitive
     description:

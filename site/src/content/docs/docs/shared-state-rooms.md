@@ -45,7 +45,7 @@ player.sendControl({
 });
 ```
 
-The example config allows each player to publish `pose` ten times per second. Other players receive it in their next state update.
+The example config allows each player to publish `pose` ten times per second. Other players receive it in their next state update. Both `publish` and `publishRoom` update the running room in memory. They never write to an account or Jetstream. To publish a public result, the game makes a separate [match publishing call](https://github.com/HolotypePteLtd/livefire/blob/master/docs/match_events.md).
 
 ## Read everyone's state
 

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:server_sdk/server_sdk.dart';
+import 'package:livefire_atproto_server/livefire_atproto_server.dart';
 
 /// Generates the node's AT Protocol OAuth client key (a private EC P-256
 /// JWK) and writes it to the given path. The node serves only the public

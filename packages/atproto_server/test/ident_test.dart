@@ -3,10 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:livefire_atproto_server/livefire_atproto_server.dart';
 import 'package:server_sdk/server_sdk.dart';
 import 'package:test/test.dart';
 
-import 'supabase_stub.dart';
+import '../../server_sdk/test/supabase_stub.dart';
 
 /// A fake stock reference PDS speaking exactly the contract
 /// [HttpGuestAccountHost] implements (live-confirmed shape):
@@ -136,7 +137,7 @@ class FakePds {
 class IdentNode {
   IdentNode._(this.listener, this.platform, this.store, this.pds);
 
-  final RoomsListener listener;
+  final AtprotoRoomsListener listener;
   final PlatformStore platform;
   final NodeStore store;
   final FakePds pds;
@@ -172,6 +173,9 @@ class IdentNode {
       ..startTicker(hz: 10);
     final ident = GuestIdentityApi(
       platform: platform,
+      accounts: platform is SupabasePlatformStore
+          ? SupabaseDeviceAccountStore(platform)
+          : SqliteAccountStore(store.database),
       tokens: tokens,
       store: store,
       supervisor: supervisor,
@@ -185,7 +189,7 @@ class IdentNode {
       sessionTtl: const Duration(days: 30),
       clock: clock ?? () => DateTime.now().toUtc(),
     );
-    final listener = RoomsListener(
+    final listener = AtprotoRoomsListener(
       supervisor: supervisor,
       api: _noControlPlane(supervisor, store, platform, tokens),
       store: store,
@@ -335,7 +339,7 @@ Future<void> main() async {
         expect(check.payload!.did, did);
 
         // The recovery key is stored, flagged guest, hash canonical.
-        final stored = await node.platform.recoveryKeyFor(did);
+        final stored = await node.listener.ident!.accounts.recoveryKeyFor(did);
         expect(stored, isNotNull);
         expect(stored!.guest, isTrue);
         expect(stored.pubkeyHash, RecoveryKeyMaterial.hash(pubJwk));
@@ -575,7 +579,7 @@ Future<void> main() async {
         expect(pds.inviteCodes, isEmpty);
 
         // ---- the credential is persisted in the platform store ---------
-        final stored = await node.platform.guestCredentialFor(did);
+        final stored = await node.listener.ident!.accounts.guestCredentialFor(did);
         expect(stored, isNotNull);
         expect(stored!.did, did);
         expect(stored.handle, body['handle']);
@@ -630,6 +634,7 @@ Future<void> main() async {
         final supervisor = RoomSupervisor(factories: const []);
         final ident = GuestIdentityApi(
           platform: platform,
+          accounts: SqliteAccountStore(store.database),
           tokens: tokens,
           store: store,
           supervisor: supervisor,
@@ -637,7 +642,7 @@ Future<void> main() async {
           publicBaseUrl: 'http://127.0.0.1:9',
           throttle: IpThrottle(maxPerWindow: 1000),
         );
-        final listener = RoomsListener(
+        final listener = AtprotoRoomsListener(
           supervisor: supervisor,
           api: IdentNode._noControlPlane(
               supervisor, store, platform, tokens),

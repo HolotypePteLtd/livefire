@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:livefire_atproto_server/livefire_atproto_server.dart';
 import 'package:physics_react3d/physics_react3d.dart';
 import 'package:server_sdk/server_sdk.dart';
 
@@ -12,7 +13,7 @@ export 'src/node_config.dart';
 /// closed with it.
 class NodeProcess {
   NodeProcess({required this.listener, required this.platform, this.ident});
-  final RoomsListener listener;
+  final AtprotoRoomsListener listener;
   final PlatformStore platform;
 
   /// The guest identity ladder, when the config enabled it — closed
@@ -30,9 +31,9 @@ class NodeProcess {
 /// `atproto`, the OAuth client provider and the DID profile service
 /// (`docs/identity.md`). Returns the started listener.
 ///
-/// **Persistence mode (automatic):** room RUNTIME state always lives in
-/// the node's SQLite file. The PLATFORM half — panel admins, API keys,
-/// scopes, counters, audit log — lives in SQLite too, unless
+/// Room configurations and consumed join tokens live in the node's SQLite
+/// file. Live game state is held in memory. Panel admins, API keys,
+/// scopes, counters, and the audit log use SQLite unless
 /// `SUPABASE_URL` + `SUPABASE_SECRET_KEY` are set in the environment:
 /// then it moves to the shared Supabase Postgres (via Kong + the
 /// service key), `adminDids` seeds `panel_admins` once, and the panel
@@ -57,7 +58,7 @@ Future<NodeProcess> startNode(NodeConfig config) async {
   if (supabase != null) {
     platform = supabase;
     stdout.writeln(
-        'rooms-node: platform data in Supabase Postgres (${supabase.seededAdmins ? 'adminDids seeded' : 'admins already in database'}); room runtime stays in SQLite');
+        'rooms-node: platform data in Supabase Postgres (${supabase.seededAdmins ? 'adminDids seeded' : 'admins already in database'}); room configs and token usage stay in SQLite');
   } else {
     store.seedApiKeys(config.apiKeys);
     platform = SqlitePlatformStore(store, adminDids: config.adminDids);
@@ -65,6 +66,7 @@ Future<NodeProcess> startNode(NodeConfig config) async {
 
   // AT Protocol identity (optional provider): the node is a confidential
   // OAuth client; DID-bearing join tokens carry the verified identity.
+  late final sqliteAccounts = SqliteAccountStore(store.database);
   AtprotoAuthProvider? atproto;
   ProfileService? profiles;
   final identityIndex = RoomIdentityIndex();
@@ -86,7 +88,7 @@ Future<NodeProcess> startNode(NodeConfig config) async {
       // repo-write scope; every other node keeps read-only sign-in.
       repoWriteScope: config.publishEvents.enabled,
     );
-    profiles = ProfileService(store: store);
+    profiles = ProfileService(store: sqliteAccounts);
   }
 
   Map<String, dynamic>? profileLookup(String roomKey, String peerId) {
@@ -142,6 +144,9 @@ Future<NodeProcess> startNode(NodeConfig config) async {
   if (identConfig != null) {
     ident = GuestIdentityApi(
       platform: platform,
+      accounts: supabase == null
+          ? sqliteAccounts
+          : SupabaseDeviceAccountStore(supabase),
       tokens: tokens,
       store: store,
       supervisor: supervisor,
@@ -164,7 +169,7 @@ Future<NodeProcess> startNode(NodeConfig config) async {
     );
   }
 
-  final listener = RoomsListener(
+  final listener = AtprotoRoomsListener(
     supervisor: supervisor,
     api: api,
     store: store,

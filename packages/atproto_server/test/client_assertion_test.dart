@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:livefire_atproto_server/livefire_atproto_server.dart';
 import 'package:server_sdk/server_sdk.dart';
 import 'package:test/test.dart';
 
@@ -300,7 +301,7 @@ class _AssertionNode {
       httpClientFactory: world.newClient,
       allowPrivateNetwork: true,
     );
-    final listener = RoomsListener(
+    final listener = AtprotoRoomsListener(
       supervisor: supervisor,
       api: ControlPlaneApi(
         supervisor: supervisor,

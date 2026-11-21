@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:protocol/protocol.dart';
+import 'package:server_sdk/server_sdk.dart';
 
-import '../node_store.dart';
+import '../account_store.dart';
 
 /// Room-scoped identity index: `(roomKey, peerId) → DID`, filled by the
 /// listener as DID-bearing peers attach, read by the hub roster's
@@ -45,8 +45,7 @@ class RoomIdentityIndex {
 ///
 /// Real-world notes:
 /// - The fetch is unauthenticated (`app.bsky.actor.getProfile` allows it
-///   for public profiles). Authenticated fetch (using the sign-in session)
-///   is deferred — the node does not retain OAuth sessions in v0.
+///   for public profiles). The profile lookup does not need a repo-write session.
 /// - `avatar` is the PDS blob URL as-is; clients render it with their own
 ///   image loader (and same policies they apply to any remote image).
 class ProfileService {
@@ -56,7 +55,7 @@ class ProfileService {
     this.ttl = const Duration(hours: 24),
   }) : _httpClientFactory = httpClientFactory ?? http.Client.new;
 
-  final NodeStore store;
+  final SqliteAccountStore store;
   final Duration ttl;
   final http.Client Function() _httpClientFactory;
 

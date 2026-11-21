@@ -62,8 +62,8 @@ class AdminMutationResult {
 
 /// The platform/accounting half of the node's persistence: panel
 /// admins, API keys (hash-only, scoped), usage counters and the audit
-/// log. The room RUNTIME half (rooms, peers, join tokens, profiles)
-/// stays in [NodeStore]/SQLite in both modes.
+/// log. [NodeStore] keeps room configurations and consumed join tokens in
+/// SQLite in both modes. Connected peers and game state live in memory.
 ///
 /// Two implementations:
 /// - [SqlitePlatformStore] — the default: everything in the node's own
@@ -148,28 +148,6 @@ abstract class PlatformStore {
     required String did,
     required String actorDid,
   });
-
-  // ---- Guest credentials (guest identity ladder) -----------------------------
-
-  /// Persists (or replaces) the generated app password for a device
-  /// account DID — the credential the node uses to write into the
-  /// guest's repo later (`createSession` as the guest).
-  Future<void> addGuestCredential(StoredGuestCredential credential);
-
-  /// The stored credential for [did], or null.
-  Future<StoredGuestCredential?> guestCredentialFor(String did);
-
-  // ---- Recovery keys (guest identity ladder) ---------------------------------
-
-  /// Stores the recovery public key for a new device-account DID
-  /// (`/ident/device-account`). v1: exactly one key per DID — an
-  /// existing row is a conflict the caller reports (rotation is a
-  /// later slice).
-  Future<void> addRecoveryKey(StoredRecoveryKey key);
-
-  /// The stored recovery key for [did], or null when the DID has none
-  /// (unknown DID, or an upgraded account without one yet).
-  Future<StoredRecoveryKey?> recoveryKeyFor(String did);
 
   // ---- Audit -----------------------------------------------------------------
 
@@ -281,22 +259,6 @@ class SqlitePlatformStore implements PlatformStore {
 
   @override
   Future<List<StoredAuditEntry>> listAudit({int limit = 50}) async => const [];
-
-  @override
-  Future<void> addGuestCredential(StoredGuestCredential credential) async =>
-      _store.upsertGuestCredential(credential);
-
-  @override
-  Future<StoredGuestCredential?> guestCredentialFor(String did) async =>
-      _store.guestCredentialFor(did);
-
-  @override
-  Future<void> addRecoveryKey(StoredRecoveryKey key) async =>
-      _store.addRecoveryKey(key);
-
-  @override
-  Future<StoredRecoveryKey?> recoveryKeyFor(String did) async =>
-      _store.recoveryKeyFor(did);
 
   @override
   Future<void> close() async {

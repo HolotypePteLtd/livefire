@@ -39,9 +39,8 @@ class NodeAuthAtproto {
 /// `publishEvents` — match events as public records
 /// (`docs/match_events.md`). Ships OFF: without the block the node
 /// requests only the read-only `atproto` scope at sign-in and publishes
-/// nothing. Enabling it (a) asks players for repo-write scope at sign-in
-/// and (b) arms the match-event publisher — per-player consent is still
-/// required per event.
+/// nothing. Enabling it requests repo-write scope at sign-in. The game
+/// must call the match publisher with the player's consent for each write.
 class NodePublishEvents {
   const NodePublishEvents({
     this.enabled = false,

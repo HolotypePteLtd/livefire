@@ -101,7 +101,10 @@ Supabase is optional and is covered [below](#platform-data-in-supabase).
 ## Already run a PDS?
 
 An existing AT Protocol Personal Data Server (PDS) can support player
-sign-in, guest account creation, or both.
+sign-in, device account creation, or both. The default guest-only node
+runs without a PDS or Jetstream. Movement, chat, and room updates travel
+over the room connection even when a player signs in.
+[Where data goes](/docs/how-it-works/#where-data-goes).
 
 - **Sign in players who already have accounts.** Follow the
   [AT Protocol sign-in setup](/docs/accounts/#2-turn-sign-in-on-in-nodejson).

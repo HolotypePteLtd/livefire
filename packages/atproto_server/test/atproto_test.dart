@@ -5,8 +5,9 @@ import 'dart:io';
 import 'package:client/client.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:livefire_atproto_server/livefire_atproto_server.dart';
 import 'package:server_sdk/server_sdk.dart';
-import 'package:server_sdk/src/atproto/did_web_client.dart';
+import 'package:livefire_atproto_server/src/atproto/did_web_client.dart';
 import 'package:test/test.dart';
 import 'atproto_world.dart';
 
@@ -39,7 +40,7 @@ class AtprotoNode {
       ..seedApiKeys({'default': 'sk_test_node'});
     final tokens = JoinTokens('node-secret'.codeUnits);
     final profiles = ProfileService(
-      store: store,
+      store: SqliteAccountStore(store.database),
       httpClientFactory: world.newClient,
     );
     final index = RoomIdentityIndex();
@@ -81,7 +82,7 @@ class AtprotoNode {
       tokens: tokens,
       publicBaseUrl: 'http://127.0.0.1:0',
     );
-    final listener = RoomsListener(
+    final listener = AtprotoRoomsListener(
       supervisor: supervisor,
       api: api,
       store: store,
@@ -378,7 +379,7 @@ void main() {
     final member = aliceClient.social.members.first;
     expect(member.profile?['did'], 'did:plc:alice');
     expect(member.profile?['avatar'], 'https://cdn.test/alice.jpg');
-    expect(node.store.profile('did:plc:alice')?.displayName, 'Alice A.');
+    expect(node.profiles.store.profile('did:plc:alice')?.displayName, 'Alice A.');
 
     // --- Bob signs in and joins with his own DID token. ---
     final bob = await node.signIn(world, 'bob.test', roomKey);
@@ -584,7 +585,7 @@ void main() {
     final supervisor = RoomSupervisor(factories: const [
       RelayAuthorityFactory(),
     ])..startTicker(hz: 60);
-    final listener = RoomsListener(
+    final listener = AtprotoRoomsListener(
       supervisor: supervisor,
       api: ControlPlaneApi(
         supervisor: supervisor,

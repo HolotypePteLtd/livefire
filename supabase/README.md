@@ -1,10 +1,9 @@
 # Panel platform data on Supabase
 
-The node's **platform** half — panel admins, API keys (hash-only,
-scoped), usage counters, audit log — can live in a Supabase stack (Kong, Postgres, and PostgREST). The room
-**runtime** (rooms, peers, join tokens, creator tokens, profiles)
-always stays in the node's own SQLite file — the data plane never
-waits on Postgres.
+Supabase can store panel admins, API keys, usage counters, audit entries,
+and device-account credentials. The node keeps room configurations and
+consumed join-token IDs in local SQLite. Connected players, chat, and live
+game state stay in memory. Public match records live on the player’s PDS.
 
 ## Persistence mode is automatic
 
@@ -16,10 +15,10 @@ waits on Postgres.
 | Admins | `adminDids` in `node.json` (read-only) | `panel_admins` table; seeded once from `adminDids`, then managed in the panel |
 | Admin management / audit log | not available | `/panel` (promote by DID or handle, revoke with guards, audit view) |
 | Bootstrap keys (`apiKeys` config) | seeded into SQLite, read-only rows | hashed in node memory only — never Postgres rows, never revocable there |
-| Room runtime | SQLite | SQLite (unchanged) |
-
-Behavior in SQLite mode is byte-for-byte the pre-Supabase behavior;
-self-hosters who do nothing notice nothing.
+| Room configuration and consumed join tokens | Local SQLite | Local SQLite |
+| Live game state and connected peers | Room memory | Room memory |
+| Device credentials and recovery public keys (when enabled) | Local SQLite | Postgres |
+| Public profile cache (when enabled) | Local SQLite | Local SQLite |
 
 ## Layout
 
@@ -62,7 +61,7 @@ What is covered where:
   `Authorization` service-key headers, argument names), cache behavior
   (verify without RPCs, TTL refresh, post-write refresh),
   quota authorization and counter writes, guard-code mapping.
-- `packages/server_sdk/test/panel_pg_test.dart` — the panel + control
+- `packages/atproto_server/test/panel_pg_test.dart` — the panel + control
   plane end-to-end in Postgres mode (over the stub): admin management,
   scoped keys enforced at `/v1` (`403 key_room_limit`,
   `403 key_template_not_allowed`), audit rows on every mutation, and

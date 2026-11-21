@@ -234,6 +234,21 @@ Future<void> until(bool Function() done, [String label = '',
 }
 
 void main() {
+  test('room-only hosting works without account routes or account tables', () async {
+    final node = await NodeHarness.start();
+    addTearDown(node.stop);
+    for (final path in ['/oauth/client.json', '/auth/start', '/ident/nonce', '/panel']) {
+      expect((await node.request('GET', path)).$1, 404, reason: path);
+    }
+    final tables = node.store.database
+        .select("SELECT name FROM sqlite_master WHERE type = 'table'")
+        .map((row) => row['name']);
+    expect(tables, containsAll(['rooms', 'token_uses']));
+    for (final name in ['guest_credentials', 'recovery_keys', 'did_profiles', 'handle_cache']) {
+      expect(tables, isNot(contains(name)));
+    }
+  });
+
   test('control plane requires the service key', () async {
     final node = await NodeHarness.start();
     addTearDown(node.stop);

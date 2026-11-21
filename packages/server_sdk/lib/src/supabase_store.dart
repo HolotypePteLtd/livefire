@@ -16,9 +16,8 @@ import 'room_supervisor.dart' show RoomException;
 /// configure it with `SUPABASE_URL` and `SUPABASE_SECRET_KEY`.
 ///
 /// Selection is automatic: [fromEnvironment] returns this store only
-/// when both variables are set; the node otherwise keeps SQLite
-/// (byte-for-byte the old behavior). Room runtime state never moves —
-/// it stays in the node's SQLite file.
+/// when both variables are set. Room configuration and token usage always
+/// stay in the node's SQLite file. The running simulation lives in memory.
 ///
 /// Hot path: bearer-key verification and admin checks answer from an
 /// in-memory cache seeded at [connect], refreshed after every panel
@@ -38,6 +37,10 @@ class SupabasePlatformStore implements PlatformStore {
 
   /// The RPC surface: `$url/rest/v1/rpc/<fn>` over HTTPS.
   final PostgrestRpc _rpc;
+
+  /// Call an application RPC using the node's configured Postgres connection.
+  Future<Object?> callRpc(String name, Map<String, Object?> args) =>
+      _rpc.call(name, args);
 
   final Map<String, StoredApiKey> _bootstrap; // hash -> row
 
@@ -328,62 +331,6 @@ class SupabasePlatformStore implements PlatformStore {
     final rows = await _rpc.call('panel_list_audit', {'p_limit': limit});
     if (rows is! List) return const [];
     return [for (final row in rows) _auditRow(row as Map<String, dynamic>)];
-  }
-
-  // ---- Guest credentials (guest identity ladder) --------------------------
-
-  @override
-  Future<void> addGuestCredential(StoredGuestCredential credential) async {
-    await _rpc.call('panel_upsert_guest_credential', {
-      'p_did': credential.did,
-      'p_handle': credential.handle,
-      'p_password': credential.password,
-    });
-  }
-
-  @override
-  Future<StoredGuestCredential?> guestCredentialFor(String did) async {
-    final row = await _rpc.call('panel_get_guest_credential', {'p_did': did});
-    if (row is! Map<String, dynamic>) return null;
-    return StoredGuestCredential(
-      did: row['did'] as String,
-      handle: row['handle'] as String,
-      password: row['password'] as String,
-      createdAt: DateTime.parse(row['createdAt'] as String),
-    );
-  }
-
-  // ---- Recovery keys (guest identity ladder) -----------------------------
-
-  @override
-  Future<void> addRecoveryKey(StoredRecoveryKey key) async {
-    // One key per DID: the SQL insert returns null when the DID already
-    // has a row — the same conflict the SQLite mode's PK raises.
-    final row = await _rpc.call('panel_register_recovery_key', {
-      'p_did': key.did,
-      'p_pubkey_hash': key.pubkeyHash,
-      'p_pubkey_jwk': key.pubkeyJwk,
-      'p_guest': key.guest,
-    });
-    if (row is! Map<String, dynamic>) {
-      throw StateError('a recovery key already exists for ${key.did}');
-    }
-  }
-
-  @override
-  Future<StoredRecoveryKey?> recoveryKeyFor(String did) async {
-    final row = await _rpc.call('panel_get_recovery_key', {'p_did': did});
-    if (row is! Map<String, dynamic>) return null;
-    final jwk = row['pubkeyJwk'];
-    return StoredRecoveryKey(
-      did: row['did'] as String,
-      pubkeyHash: row['pubkeyHash'] as String,
-      pubkeyJwk: jwk is Map<String, dynamic>
-          ? jwk
-          : jsonDecode(jwk as String) as Map<String, dynamic>,
-      guest: row['guest'] == true,
-      createdAt: DateTime.parse(row['createdAt'] as String),
-    );
   }
 
   // ---- Cache ------------------------------------------------------------

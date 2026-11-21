@@ -119,5 +119,6 @@ The device key authenticates a player to Livefire. The PDS operator retains cont
 | Package | Responsibility |
 | :--- | :--- |
 | `packages/atproto_identity` | Client-side desktop loopback OAuth (`AtprotoAccountManager`) and `NodeAuthClient` (no `dart:io` in `NodeAuthClient`). |
-| `packages/server_sdk` | Server-side `AtprotoAuthProvider`, `NodeAtprotoResolver`, `ConfidentialClient`, `ProfileService`, `GuestIdentityApi`, and `MatchEventPublisher`. |
+| `packages/server_sdk` | Guest room hosting, the room API, and join-token checks. Room updates stay on the room connection. |
+| `packages/atproto_server` (Dart package `livefire_atproto_server`) | Server-side `AtprotoAuthProvider`, `NodeAtprotoResolver`, `ConfidentialClient`, `ProfileService`, `GuestIdentityApi`, and `MatchEventPublisher`. |
 | `packages/protocol` & `packages/client` | Zero AT Protocol dependencies — identity flows purely as an opaque adapter-verified string and optional roster profile map. |

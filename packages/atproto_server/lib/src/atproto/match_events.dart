@@ -4,9 +4,8 @@ import 'dart:math';
 
 import 'package:atproto_oauth/atproto_oauth.dart';
 import 'package:http/http.dart' as http;
+import 'package:server_sdk/server_sdk.dart';
 import 'package:sqlite3/sqlite3.dart';
-
-import '../sqlite_database.dart';
 
 /// Match events as public records — the write side of
 /// `docs/match_events.md`. A record published to a player's atproto

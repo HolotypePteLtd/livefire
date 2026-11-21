@@ -6,6 +6,12 @@ Livefire hosts multiplayer rooms. A game backend creates a room over HTTP and gi
 
 The TypeScript package is `openfire-sdk`. It exports `Livefire` and its original alias, `Openfire`.
 
+## Rooms and player accounts
+
+A guest-only server needs the Dart `server_sdk` package. Players send commands to the room and receive snapshots over their room connection. The built-in rooms keep gameplay in memory. The node saves room configuration and join-token usage in SQLite so it can reopen a room after a restart.
+
+Add `livefire_atproto_server` when you want players to sign in with an AT Protocol account, create a device account on a PDS (Personal Data Server), or explicitly publish a match result to a player’s repository. Sign-in alone requests identity access. The self-hosted node bundles both packages in one process and defaults to guest play. [See where each kind of data goes](https://rooms-sdk-docs.pages.dev/docs/how-it-works/#where-data-goes).
+
 ## Choose a room type
 
 | Room | What the server does |
@@ -113,7 +119,8 @@ await alice.close();
 | :--- | :--- |
 | [`packages/protocol`](packages/protocol) | Core room engine: `RoomHub`, `RoomAuthority`, `SnapshotEncoder`/`Decoder`, `RoomSocialHost`/`Client`, in-memory & BroadcastChannel transports. Pure Dart (web-clean). |
 | [`packages/client`](packages/client) | `RoomClient`, interpolated `PlaybackClock`, native & web WebSocket adapters (text + binary frames). |
-| [`packages/server_sdk`](packages/server_sdk) | Dedicated server (`RoomServer`), multi-room `RoomSupervisor`, `RoomsListener`, `/v1` HTTP API, `/panel`, `/ident`, AT Protocol provider, `RelayAuthority`, `MovementTemplateAuthority`, SQLite & Supabase stores. |
+| [`packages/server_sdk`](packages/server_sdk) | Room hosting, room control API, join tokens, built-in room authorities, and node storage. |
+| [`packages/atproto_server`](packages/atproto_server) | Optional `livefire_atproto_server` integration for OAuth, device accounts, profile lookups, the account-backed admin panel, and public match records. |
 | [`packages/physics_react3d`](packages/physics_react3d) | Native FFI `PhysicsBackend` binding for `reactphysics3d_dart`. |
 | [`packages/atproto_identity`](packages/atproto_identity) | AT Protocol desktop loopback OAuth (`AtprotoAccountManager`) and `NodeAuthClient`. |
 | [`packages/node`](packages/node) | Standalone node binary (`bin/node.dart --config node.json`). |
@@ -150,6 +157,7 @@ with Dart and adding optional Bluesky sign-in or Supabase.
 (cd packages/client && dart analyze && dart test)
 (cd packages/atproto_identity && dart analyze && dart test)
 (cd packages/server_sdk && dart analyze && dart test)
+(cd packages/atproto_server && dart analyze && dart test)
 (cd packages/node && dart analyze && dart test)
 (cd sdk/typescript && npm test)
 (cd packages/client && dart compile js tool/web_compile_smoke.dart)

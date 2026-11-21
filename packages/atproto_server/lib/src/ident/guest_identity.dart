@@ -7,12 +7,9 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:http/http.dart' as http;
 import 'package:pointycastle/export.dart';
+import 'package:server_sdk/server_sdk.dart';
 
-import '../join_tokens.dart';
-import '../listener_gates.dart';
-import '../node_store.dart';
-import '../platform_store.dart';
-import '../room_supervisor.dart';
+import '../account_store.dart';
 
 /// A guest account created on the node's PDS. [password] is the
 /// generated app password for the account — the node persists it (the
@@ -202,6 +199,7 @@ class HttpGuestAccountHost implements GuestAccountHost {
 class GuestIdentityApi {
   GuestIdentityApi({
     required this.platform,
+    required this.accounts,
     required this.tokens,
     required this.store,
     required this.supervisor,
@@ -216,8 +214,8 @@ class GuestIdentityApi {
     this.trustedProxies = const {},
   });
 
-  /// Recovery-key storage (SQLite or Supabase mode — same surface).
   final PlatformStore platform;
+  final DeviceAccountStore accounts;
 
   /// Mints `gs_` sessions and DID-bearing join tokens.
   final JoinTokens tokens;
@@ -390,7 +388,7 @@ class GuestIdentityApi {
     // platform store (both persistence modes) so the node can write
     // into the guest's repo later — the player never sees it, the
     // operator holds it (see the trust note).
-    await platform.addGuestCredential(StoredGuestCredential(
+    await accounts.addGuestCredential(StoredGuestCredential(
       did: account.did,
       handle: account.handle,
       password: account.password,
@@ -399,7 +397,7 @@ class GuestIdentityApi {
 
     // Recovery key: hash of the canonical public JWK + the JWK itself.
     try {
-      await platform.addRecoveryKey(StoredRecoveryKey(
+      await accounts.addRecoveryKey(StoredRecoveryKey(
         did: account.did,
         pubkeyHash: RecoveryKeyMaterial.hash(jwk),
         pubkeyJwk: jwk,
@@ -443,7 +441,7 @@ class GuestIdentityApi {
       }
     }
 
-    final stored = await platform.recoveryKeyFor(did);
+    final stored = await accounts.recoveryKeyFor(did);
     if (stored == null) {
       await _error(request, 404, 'not_found', 'unknown did');
       return;

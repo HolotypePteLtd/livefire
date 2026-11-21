@@ -1,11 +1,12 @@
 # Publishing match events to AT Protocol
 
-Livefire can publish match summaries and achievements as
+The optional Dart package `livefire_atproto_server` can publish match summaries and achievements as
 `com.openfire.matchEvent` records in a consenting player's repository.
 Publishing is disabled by default. To enable it on a node, configure
 `publishEvents.enabled`, set a reverse-domain `gameId`, and enable the
 AT Protocol identity provider. Enabling publishing requests the `repo`
-scope when players sign in.
+scope when players sign in. The setting alone writes nothing. Relay commands
+named `publish` or `publishRoom` only update the live room.
 
 A player must consent to each publish. The default `summaryOnly` setting
 allows `matchResult` records. Set it to false to also publish

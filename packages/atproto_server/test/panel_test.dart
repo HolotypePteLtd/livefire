@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:livefire_atproto_server/livefire_atproto_server.dart';
 import 'package:server_sdk/server_sdk.dart';
 import 'package:test/test.dart';
 
@@ -75,7 +76,7 @@ class PanelNode {
       tokens: tokens,
       atproto: provider,
     );
-    final bound = RoomsListener(
+    final bound = AtprotoRoomsListener(
       supervisor: supervisor,
       api: api,
       store: store,

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:server_sdk/server_sdk.dart';
+import 'package:livefire_atproto_server/livefire_atproto_server.dart';
 
 /// Operator diagnostic for the atproto sign-in discovery chain — the
 /// thing to run when a player reports "could not start sign-in". It

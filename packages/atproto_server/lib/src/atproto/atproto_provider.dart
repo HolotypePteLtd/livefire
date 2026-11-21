@@ -4,8 +4,8 @@ import 'dart:math';
 
 import 'package:atproto_oauth/atproto_oauth.dart';
 import 'package:http/http.dart' as http;
+import 'package:server_sdk/server_sdk.dart';
 
-import '../join_tokens.dart';
 import 'client_keys.dart';
 import 'confidential_client.dart';
 import 'discovery_client.dart';

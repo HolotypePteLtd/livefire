@@ -9,7 +9,8 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart' as io_client;
 import 'package:http/testing.dart';
 import 'package:pointycastle/export.dart';
-import 'package:server_sdk/server_sdk.dart';
+import 'package:livefire_atproto_server/livefire_atproto_server.dart';
+import 'package:server_sdk/server_sdk.dart' show JoinTokens;
 import 'package:test/test.dart';
 
 /// An in-test record server (PDS shape): real TLS on 127.0.0.1, serving
