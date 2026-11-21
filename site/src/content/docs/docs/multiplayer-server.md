@@ -191,7 +191,7 @@ See [shared state rooms](/docs/shared-state-rooms/) for ownership and quotas or 
 
 ## Hosted preview
 
-If you have a preview API key, use `https://play.holotype.com.sg` as the node origin. Request a key and have the operator add your game’s web origin to the allowlist. Browsers send `Origin` automatically. For a native client, set an allowed `Origin` on the WebSocket handshake. The [TypeScript SDK README](https://github.com/HolotypePteLtd/livefire/tree/master/sdk/typescript) shows how to supply a socket factory.
+Use `https://play.holotype.com.sg` as the node origin. See the [hosted quickstart](/docs/hosted/) for preview access and client setup.
 
 ## Watch two players share one world
 

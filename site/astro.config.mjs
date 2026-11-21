@@ -44,8 +44,9 @@ export default defineConfig({
       sidebar: [
         { label: 'Guides', items: [
           { label: 'Documentation', link: '/docs/' },
+          { label: 'Hosted quickstart', link: '/docs/hosted/' },
           { label: 'Run a room', link: '/docs/multiplayer-server/' },
-          { label: 'Host a server', link: '/docs/self-hosting/' },
+          { label: 'Self-host Livefire', link: '/docs/self-hosting/' },
           { label: 'Developer panel', link: '/docs/panel/' },
         ] },
         { label: 'Rooms', items: [
