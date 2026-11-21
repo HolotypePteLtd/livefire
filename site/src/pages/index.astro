@@ -5,6 +5,11 @@ const description = 'Hosted multiplayer rooms for games, with shared state, serv
 const quickstart = `import { Livefire } from 'openfire-sdk';
 const game = await Livefire.join({ url, joinToken, name: 'Alice' });
 game.chat.send('Hello!');`;
+const agentDocs = new URL('/llms-full.txt', Astro.site);
+const agentPrompt = `Integrate hosted Livefire into this project.
+Read ${agentDocs}
+
+Inspect the existing backend and client. Add a flow that creates one room and joins it from two clients with separate one-time tokens. Keep LIVEFIRE_API_KEY on the backend. Show me how to configure and test it.`;
 ---
 
 <!doctype html>
@@ -31,7 +36,7 @@ game.chat.send('Hello!');`;
         <a class="wordmark" href="/" aria-label="Livefire home"><img src="/favicon.svg" alt="" width="28" height="28" />Livefire</a>
         <nav aria-label="Main navigation">
           <a href="/docs/">Documentation</a>
-          <a href="#coding-agents">For coding agents</a>
+          <a href="#coding-agents">Agent prompt</a>
         </nav>
       </div>
     </header>
@@ -39,34 +44,53 @@ game.chat.send('Hello!');`;
     <main id="main">
       <section class="hero" aria-labelledby="intro">
         <div class="hero-layout wrap">
+          <h1 id="intro">Multiplayer <span>rooms</span></h1>
           <div>
-            <h1 id="intro">Multiplayer <span>rooms</span></h1>
             <p class="lede">Add multiplayer to your game. Livefire hosts the rooms and handles shared state, server-side physics, and text chat.</p>
             <div class="actions">
               <a class="primary" href="/docs/hosted/">Hosted quickstart</a>
             </div>
           </div>
-
-          <figure class="room-demo" aria-labelledby="demo-title">
-            <figcaption>
-              <h2 id="demo-title">Two players, one room</h2>
-              <p>Drag in your view, or click it and use the arrow keys. Watch your blue player move in the red bot’s view too. The room server runs in this tab.</p>
-            </figcaption>
-            <div id="world-demo-frames" class="world-demo-grid"></div>
-            <noscript><p>Enable JavaScript to play the WebGL demo.</p></noscript>
-            <script is:inline src="/world/orchestrator.js" defer></script>
-          </figure>
         </div>
       </section>
 
-      <section class="details wrap" aria-labelledby="quickstart">
-        <div>
-          <h2 id="quickstart">Join your first room</h2>
-          <p>Your game backend creates a hosted room and passes its URL and a one-time join token to the client.</p>
-          <a class="text-link" href="/docs/hosted/">Get a preview key and set up the SDK</a>
-        </div>
-        <pre class="quickstart-code" aria-label="TypeScript client example" tabindex="0"><code>{quickstart}</code></pre>
-      </section>
+      <div class="snippets wrap">
+        <section class="snippet" aria-labelledby="quickstart">
+          <header>
+            <h2 id="quickstart">Join a room in TypeScript</h2>
+            <button type="button" data-copy="quickstart-code" hidden>Copy code</button>
+          </header>
+          <pre aria-label="TypeScript client example" tabindex="0"><code id="quickstart-code">{quickstart}</code></pre>
+          <div class="snippet-footer">
+            <a href="/docs/hosted/">Get a preview key and set up the SDK</a>
+            <span role="status"></span>
+          </div>
+        </section>
+
+        <section class="snippet" aria-labelledby="coding-agents">
+          <header>
+            <h2 id="coding-agents">Prompt for your coding agent</h2>
+            <button type="button" data-copy="agent-prompt" hidden>Copy prompt</button>
+          </header>
+          <p class="agent-prompt" id="agent-prompt">{agentPrompt}</p>
+          <div class="snippet-footer">
+            <a href="/llms-full.txt">Open the plain-text docs</a>
+            <span role="status"></span>
+          </div>
+        </section>
+      </div>
+
+      <div class="demo-section wrap">
+        <figure class="room-demo" aria-labelledby="demo-title">
+          <figcaption>
+            <h2 id="demo-title">Two players, one room</h2>
+            <p>Drag in your view, or click it and use the arrow keys. Watch your blue player move in the red bot’s view too. The room server runs in this tab.</p>
+          </figcaption>
+          <div id="world-demo-frames" class="world-demo-grid"></div>
+          <noscript><p>Enable JavaScript to play the WebGL demo.</p></noscript>
+          <script is:inline src="/world/orchestrator.js" defer></script>
+        </figure>
+      </div>
 
       <section class="details wrap" aria-labelledby="room-types">
         <h2 id="room-types">Room types</h2>
@@ -84,18 +108,6 @@ game.chat.send('Hello!');`;
           </div>
         </div>
       </section>
-
-      <section class="details wrap" aria-labelledby="coding-agents">
-        <h2 id="coding-agents">For coding agents</h2>
-        <div>
-          <p>Give your coding agent the full Livefire docs in one plain-text file. It includes setup, the HTTP API, and the WebSocket protocol.</p>
-          <div class="docs-actions">
-            <a class="text-link" id="agent-docs" href="/llms-full.txt">Open /llms-full.txt</a>
-            <button type="button" id="copy-docs" hidden>Copy docs URL</button>
-          </div>
-          <p class="copy-status" id="copy-status" role="status"></p>
-        </div>
-      </section>
     </main>
 
     <footer class="wrap">
@@ -108,19 +120,22 @@ game.chat.send('Hello!');`;
       </label>
     </footer>
     <script>
-      const docs = document.querySelector<HTMLAnchorElement>('#agent-docs')!;
-      const copy = document.querySelector<HTMLButtonElement>('#copy-docs')!;
-      const status = document.querySelector<HTMLParagraphElement>('#copy-status')!;
       if (navigator.clipboard?.writeText) {
-        copy.hidden = false;
-        copy.addEventListener('click', async () => {
-          try {
-            await navigator.clipboard.writeText(docs.href);
-            status.textContent = 'Docs URL copied.';
-          } catch {
-            status.textContent = 'Open the docs link to copy its URL.';
-          }
-        });
+        for (const button of document.querySelectorAll<HTMLButtonElement>('button[data-copy]')) {
+          const snippet = document.getElementById(button.dataset.copy!);
+          const status = button.closest('.snippet')?.querySelector('[role="status"]');
+          if (!snippet || !status) continue;
+
+          button.hidden = false;
+          button.addEventListener('click', async () => {
+            try {
+              await navigator.clipboard.writeText(snippet.textContent ?? '');
+              status.textContent = 'Copied.';
+            } catch {
+              status.textContent = 'Select the text to copy it.';
+            }
+          });
+        }
       }
 
       const select = document.querySelector<HTMLSelectElement>('#theme')!;

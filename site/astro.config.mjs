@@ -16,7 +16,7 @@ function omitEmbeddedTitle() {
 
 export default defineConfig({
   markdown: { remarkPlugins: [omitEmbeddedTitle] },
-  site: process.env.SITE_URL ?? 'https://rooms.example.com',
+  site: process.env.SITE_URL ?? 'https://rooms-sdk-docs.pages.dev',
   trailingSlash: 'ignore',
   redirects: {
     '/docs/concepts': '/docs/how-it-works/',

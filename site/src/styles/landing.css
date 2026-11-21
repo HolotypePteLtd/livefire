@@ -36,21 +36,70 @@ a:hover { text-decoration-thickness: 2px; }
 
 .hero-layout {
   display: grid;
-  grid-template-columns: minmax(0, 0.74fr) minmax(0, 1.26fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(2rem, 3.5vw, 3.5rem);
   align-items: center;
-  padding-block: clamp(3rem, 6vw, 6rem);
+  padding-block: clamp(2.25rem, 4vw, 3.75rem);
 }
 h1, h2, h3 { line-height: 1.05; }
 h1 { font-size: clamp(3.4rem, 6.65vw, 6.3rem); font-weight: 680; letter-spacing: -0.046em; }
 h1 span { display: block; color: var(--lime); }
-.lede { max-width: 42ch; margin-top: 1.4rem; color: var(--chalk); font-size: clamp(1.06rem, 1.4vw, 1.22rem); }
-.actions { flex-wrap: wrap; gap: 1rem 1.4rem; margin-top: 1.85rem; }
+.lede { max-width: 42ch; color: var(--chalk); font-size: clamp(1.06rem, 1.4vw, 1.22rem); }
+.actions { flex-wrap: wrap; gap: 1rem 1.4rem; margin-top: 1.3rem; }
 .primary, .text-link { font-weight: 620; }
 .primary { padding: 0.76rem 1.12rem; border-radius: 3px; color: var(--board-ink); background: var(--lime); text-decoration: none; }
 .primary:hover { background: var(--chalk); }
 .primary:focus-visible { outline-color: var(--chalk); }
 
+.snippets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding-block: 1.5rem clamp(2rem, 4vw, 3rem);
+}
+.snippet {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: clamp(1rem, 2vw, 1.4rem);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  background: light-dark(#ebe8fc, #1c1e3b);
+}
+.snippet header, .snippet-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; }
+.snippet h2 { font-size: clamp(1.15rem, 2vw, 1.4rem); letter-spacing: -0.025em; }
+.snippet button {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--link);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 620;
+  cursor: pointer;
+}
+.snippet button:hover { background: var(--link); color: var(--page); }
+.snippet pre, .agent-prompt {
+  flex: 1;
+  margin: 0;
+  padding: clamp(0.85rem, 2vw, 1.25rem);
+  border-radius: 3px;
+  background: #171936;
+  color: #f2f0ff;
+}
+.snippet pre {
+  padding-inline: 0.85rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 0.8rem/1.8 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+.agent-prompt { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.94rem; }
+.snippet-footer { color: var(--link); font-size: 0.86rem; }
+.snippet-footer span { color: var(--muted); }
+
+.demo-section { padding-bottom: clamp(2rem, 4vw, 3rem); }
 .room-demo {
   min-width: 0;
   overflow: hidden;
@@ -75,37 +124,23 @@ h1 span { display: block; color: var(--lime); }
 .room-demo noscript p { padding: 0.5rem 1rem; }
 
 .details { display: grid; grid-template-columns: 1fr 2fr; gap: clamp(2rem, 4vw, 4rem); padding-block: clamp(2.5rem, 4.5vw, 4rem); }
-.details + .details, footer { border-top: 1px solid var(--rule); }
+.details, footer { border-top: 1px solid var(--rule); }
 .details h2 { max-width: 13ch; font-size: clamp(2rem, 3vw, 2.8rem); font-weight: 640; letter-spacing: -0.038em; color: var(--link); }
 .details p { color: var(--muted); margin-block: 0.62rem 0.85rem; }
 .details a { font-size: 0.95rem; color: var(--link); }
-.quickstart-code {
-  align-self: start;
-  min-width: 0;
-  margin: 0;
-  padding: clamp(1rem, 3vw, 1.8rem);
-  overflow-x: auto;
-  border-radius: 5px;
-  background: #171936;
-  color: #f2f0ff;
-  font: 0.9rem/1.8 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
-}
-.quickstart-code:focus-visible { outline-color: var(--link); }
 .descriptions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.5rem, 3.5vw, 3.5rem); }
 .descriptions h3 { font-size: 1.16rem; font-weight: 670; }
 .descriptions a { display: inline-block; margin-right: 0.75rem; }
-.docs-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem 1rem; }
-.docs-actions button { padding: 0.45rem 0.7rem; border: 1px solid var(--rule); border-radius: 3px; background: var(--page); color: var(--link); font: inherit; cursor: pointer; }
-.docs-actions button:hover { border-color: var(--link); }
-.details .copy-status { margin: 0.45rem 0 0; font-size: 0.88rem; }
-.copy-status:empty { margin: 0; }
 footer { justify-content: flex-end; padding-block: 1.6rem; color: var(--muted); font-size: 0.87rem; }
 footer select { font: inherit; padding: 0.3rem; margin-left: 0.3rem; color: var(--ink); background: var(--page); border: 1px solid var(--rule); border-radius: 3px; }
 
 @media (max-width: 60rem) {
-  .hero-layout { grid-template-columns: 1fr; gap: 2rem; }
   .details { grid-template-columns: 1fr; }
   .details h2 { max-width: none; }
+}
+@media (max-width: 48rem) {
+  .hero-layout, .snippets { grid-template-columns: 1fr; }
+  .hero-layout { gap: 1.1rem; }
 }
 @media (max-width: 36rem) {
   .bar { min-height: 4rem; }
