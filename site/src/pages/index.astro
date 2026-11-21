@@ -44,41 +44,39 @@ Inspect the existing backend and client. Add a flow that creates one room and jo
     <main id="main">
       <section class="hero" aria-labelledby="intro">
         <div class="hero-layout wrap">
-          <h1 id="intro">Multiplayer <span>rooms</span></h1>
           <div>
-            <p class="lede">Add multiplayer to your game. Livefire hosts the rooms and handles shared state, server-side physics, and text chat.</p>
+            <h1 id="intro">Instant real-time <span>multiplayer</span></h1>
+            <p class="lede">Livefire hosts your game’s rooms and handles shared state, server-side physics, and text chat.</p>
             <div class="actions">
               <a class="primary" href="/docs/hosted/">Hosted quickstart</a>
             </div>
           </div>
+
+          <div class="snippets">
+            <section class="snippet" aria-labelledby="quickstart">
+              <h2 id="quickstart">Join a room in TypeScript</h2>
+              <div class="snippet-box">
+                <pre aria-label="TypeScript client example" tabindex="0"><code id="quickstart-code">{quickstart}</code></pre>
+                <button type="button" class="copy-button" data-copy="quickstart-code" aria-label="Copy code" title="Copy code" hidden>
+                  <span aria-hidden="true"></span>
+                </button>
+              </div>
+              <span class="visually-hidden" role="status"></span>
+            </section>
+
+            <section class="snippet" aria-labelledby="coding-agents">
+              <h2 id="coding-agents">Prompt for your coding agent</h2>
+              <div class="snippet-box">
+                <p class="agent-prompt" id="agent-prompt">{agentPrompt}</p>
+                <button type="button" class="copy-button" data-copy="agent-prompt" aria-label="Copy prompt" title="Copy prompt" hidden>
+                  <span aria-hidden="true"></span>
+                </button>
+              </div>
+              <span class="visually-hidden" role="status"></span>
+            </section>
+          </div>
         </div>
       </section>
-
-      <div class="snippets wrap">
-        <section class="snippet" aria-labelledby="quickstart">
-          <header>
-            <h2 id="quickstart">Join a room in TypeScript</h2>
-            <button type="button" data-copy="quickstart-code" hidden>Copy code</button>
-          </header>
-          <pre aria-label="TypeScript client example" tabindex="0"><code id="quickstart-code">{quickstart}</code></pre>
-          <div class="snippet-footer">
-            <a href="/docs/hosted/">Get a preview key and set up the SDK</a>
-            <span role="status"></span>
-          </div>
-        </section>
-
-        <section class="snippet" aria-labelledby="coding-agents">
-          <header>
-            <h2 id="coding-agents">Prompt for your coding agent</h2>
-            <button type="button" data-copy="agent-prompt" hidden>Copy prompt</button>
-          </header>
-          <p class="agent-prompt" id="agent-prompt">{agentPrompt}</p>
-          <div class="snippet-footer">
-            <a href="/llms-full.txt">Open the plain-text docs</a>
-            <span role="status"></span>
-          </div>
-        </section>
-      </div>
 
       <div class="demo-section wrap">
         <figure class="room-demo" aria-labelledby="demo-title">
@@ -126,12 +124,18 @@ Inspect the existing backend and client. Add a flow that creates one room and jo
           const status = button.closest('.snippet')?.querySelector('[role="status"]');
           if (!snippet || !status) continue;
 
+          let resetIcon: ReturnType<typeof setTimeout>;
           button.hidden = false;
           button.addEventListener('click', async () => {
+            clearTimeout(resetIcon);
+            status.textContent = '';
             try {
               await navigator.clipboard.writeText(snippet.textContent ?? '');
+              button.classList.add('copied');
               status.textContent = 'Copied.';
+              resetIcon = setTimeout(() => button.classList.remove('copied'), 1500);
             } catch {
+              button.classList.remove('copied');
               status.textContent = 'Select the text to copy it.';
             }
           });
