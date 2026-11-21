@@ -1,6 +1,6 @@
 # Room Templates & Config Schema (v1)
 
-A **room template** is a built-in server authority configured entirely with JSON — no server code required. Submit a config to `POST /v1/rooms`, and Openfire validates it, pins it verbatim, and runs the room.
+A **room template** is a built-in server authority configured entirely with JSON — no server code required. Submit a config to `POST /v1/rooms`, and Livefire validates it, pins it verbatim, and runs the room.
 
 ---
 

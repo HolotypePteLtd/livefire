@@ -33,4 +33,5 @@ RUN npm run build
 # can serve it (compose marks this service service_completed_successfully).
 FROM alpine:3.21
 COPY --from=build /src/site/dist /site
-CMD ["sh", "-c", "rm -rf /srv/site && mkdir -p /srv/site && cp -r /site/. /srv/site/"]
+# Clear the contents while keeping the volume mount point in place.
+CMD ["sh", "-c", "mkdir -p /srv/site && find /srv/site -mindepth 1 -maxdepth 1 -exec rm -rf {} + && cp -r /site/. /srv/site/"]

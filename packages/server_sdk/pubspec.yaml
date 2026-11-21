@@ -1,7 +1,7 @@
 name: server_sdk
 description: Native-only dedicated room server SDK - WebSocket listener around the room hub, plus the platform relay authority.
 version: 0.1.0
-homepage: https://github.com/HolotypePteLtd/openfire
+homepage: https://github.com/HolotypePteLtd/livefire
 publish_to: none
 environment:
   sdk: ^3.12.0

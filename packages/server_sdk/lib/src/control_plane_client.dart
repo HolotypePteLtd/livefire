@@ -3,7 +3,7 @@ import 'dart:io';
 
 /// Thin Dart client for the node's control plane (`/v1/*`,
 /// `docs/control_plane_api.md`) — the parity of the TypeScript SDK's
-/// `Openfire.admin` namespace for Dart game backends: create rooms, mint
+/// Control plane client for Dart game backends: create rooms, mint
 /// one-time join tokens, list and delete rooms, with the service key in
 /// the Authorization header only.
 ///

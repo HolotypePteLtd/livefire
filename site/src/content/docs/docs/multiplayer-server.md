@@ -46,8 +46,8 @@ scripted players, chat, a shared counter. You need the Dart runtime from <https:
 with `dart --version` (3.x), then:
 
 ```sh
-git clone https://github.com/HolotypePteLtd/openfire
-cd rooms_sdk/examples/counter
+git clone https://github.com/HolotypePteLtd/livefire
+cd livefire/examples/counter
 dart pub get
 dart run
 ```
@@ -65,24 +65,24 @@ You should see:
 That is real multiplayer: a room server on a real WebSocket, two players
 joining over it, chat, and shared state. The whole program is
 `examples/counter/bin/counter.dart` in the
-[repository](https://github.com/HolotypePteLtd/openfire) — about 130 lines.
+[repository](https://github.com/HolotypePteLtd/livefire) — about 130 lines.
 
 ## 2. Make it yours
 
 The demo is three parts. You keep the same shape for any game.
 
-**Point your game at the SDK.** Openfire travels with its source, so
+**Point your game at the SDK.** Livefire travels with its source, so
 clone it next to your game and add path dependencies to your
 `pubspec.yaml`:
 
 ```yaml
 dependencies:
   protocol:
-    path: ../rooms_sdk/packages/protocol
+    path: ../livefire/packages/protocol
   client:
-    path: ../rooms_sdk/packages/client
+    path: ../livefire/packages/client
   server_sdk:
-    path: ../rooms_sdk/packages/server_sdk
+    path: ../livefire/packages/server_sdk
 ```
 
 Run `dart pub get` and look for `Got dependencies!`.
@@ -256,12 +256,12 @@ SDK the whole backend is three lines and the client four:
 
 ```ts
 // backend, per match (the API key stays on your server)
-const of = Openfire.admin(API_KEY, 'https://play.holotype.com.sg');
+const of = Livefire.admin(API_KEY, 'https://play.holotype.com.sg');
 const room = await of.createRoom({ template: 'relay', capacity: 16 });
 const { joinToken } = await of.mintToken(room, playerName);
 
 // client, per player
-const game = await Openfire.join({ url: room.url, joinToken, name: 'Sam' });
+const game = await Livefire.join({ url: room.url, joinToken, name: 'Sam' });
 ```
 
 From Dart, `RoomClient` connects to the returned `url` (it already
@@ -271,60 +271,12 @@ software your node would run.
 
 ## 4. Put the server on the internet
 
-So far the room ran inside your game's process. For a real game you run
-the **rooms server** — one program that hosts many rooms, with an API for
-creating them. You need a Linux server (a small one is plenty) and a
-domain name.
+Use the [Self-hosting quickstart](/docs/self-hosting/) to start the rooms
+server on your own Linux host. It walks through DNS, automatic HTTPS, and
+an authenticated API check. You can start with guest players and SQLite.
 
-1. **Point your domain at the server** — in your domain's control panel:
-
-   ```text
-   Type: A      Name: rooms      Value: YOUR.SERVER.IP.ADDRESS
-   ```
-
-2. **Get the code onto the server**:
-
-   ```sh
-   git clone https://github.com/HolotypePteLtd/openfire && cd openfire
-   ```
-
-3. **Paste `.env`** next to the checkout:
-
-   ```sh
-   cat > .env <<EOF
-   DOMAIN=rooms.yourdomain.com
-   ACME_EMAIL=you@yourdomain.com
-   EOF
-   ```
-
-   The HTTPS certificate is requested automatically for `DOMAIN`.
-
-4. **Paste `node.json`** — `cp deploy/node.example.json node.json`, then
-   set three things:
-
-   - `publicBaseUrl` → `https://rooms.yourdomain.com` (the `https://` is
-     required)
-   - `nodeSecret` → any long random string (32+ characters); it signs join
-     tokens
-   - `apiKeys` → a name and long random string of your own; this is the
-     service key the API asks for below
-
-5. **Turn it on**: `docker compose up -d` — first start builds for a few
-   minutes and brings up the rooms server, this docs site, and a web
-   proxy with HTTPS.
-
-Check it answers:
-
-```sh
-curl -H "Authorization: Bearer YOUR_SERVICE_KEY" \
-  https://rooms.yourdomain.com/v1/rooms
-```
-
-JSON back means the server, the API and the login key all work.
-<https://rooms.yourdomain.com/docs/> serves this site from your server.
-
-Every `node.json` setting, the proxy config and running without Docker:
-[Self-hosting reference](/docs/self-hosting/).
+Once your API check returns `200`, use your node's HTTPS origin and
+bootstrap API key to create rooms and mint player tokens.
 
 ## 5. Create a room and invite players
 
@@ -333,7 +285,7 @@ that picks what kind of room it is. This one has chat plus shared state —
 each player owns a `pose` value, the room leader owns a `phase` value:
 
 ```sh
-curl -X POST https://rooms.yourdomain.com/v1/rooms \
+curl --fail-with-body -X POST https://rooms.yourdomain.com/v1/rooms \
   -H "Authorization: Bearer YOUR_SERVICE_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -368,7 +320,7 @@ One token comes with the room; each extra player needs their own (tokens
 are single-use):
 
 ```sh
-curl -X POST https://rooms.yourdomain.com/v1/rooms/rm_9f3k2/tokens \
+curl --fail-with-body -X POST https://rooms.yourdomain.com/v1/rooms/rm_9f3k2/tokens \
   -H "Authorization: Bearer YOUR_SERVICE_KEY"
 ```
 
@@ -449,7 +401,8 @@ cheat?*
   not reach the room. The demo only needs `127.0.0.1`, so a firewall or
   antivirus blocking localhost sockets is the usual cause.
 - **The HTTPS step fails with a DNS error** — the address record hasn't
-  spread yet; wait two minutes and run `docker compose up -d` again.
+  propagated yet. Check that it resolves to your server and that
+  inbound TCP ports 80 and 443 are open.
 - **Rooms work but Bluesky sign-in refuses** — `publicBaseUrl` is missing
   `https://`. It must be the full `https://rooms.yourdomain.com`.
 - **Lost `node.json` or `.env`** — join tokens stop validating. Back both

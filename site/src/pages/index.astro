@@ -7,7 +7,7 @@
 // topology, terminal windows, loadout cards — restrained, not neon.
 import '../styles/landing.css';
 
-const repo = 'https://github.com/HolotypePteLtd/openfire';
+const repo = 'https://github.com/HolotypePteLtd/livefire';
 
 // Inline icon set — stroke inherits currentColor; cards tint it via the
 // tier classes. Kept tiny and geometric to match the HUD aesthetic.
@@ -58,8 +58,8 @@ const features = [
   {
     icon: 'server',
     tier: 'ember',
-    title: 'Self-host in one command',
-    body: 'docker compose up -d brings up the rooms server, HTTPS and the docs site on your own domain. Your machine, your database, your rules.',
+    title: 'Self-host with Docker Compose',
+    body: 'Set up your domain and server keys, then Docker Compose starts the rooms server, HTTPS and the docs site.',
   },
   {
     icon: 'signal',
@@ -72,7 +72,7 @@ const features = [
 const stats = [
   { value: '240', unit: 'Hz', label: 'server simulation ceiling' },
   { value: '15', unit: 's', label: 'reconnect grace window' },
-  { value: '1', unit: 'cmd', label: 'to self-host everything' },
+  { value: '1', unit: 'port', label: 'on the rooms node' },
   { value: '∞', unit: '', label: 'client languages — open spec' },
 ];
 
@@ -155,7 +155,7 @@ const tiers = [
 
 const faqs = [
   {
-    q: 'What license is Openfire under?',
+    q: 'What license is Livefire under?',
     a: 'MIT. The whole repository — server, room types, SDK and docs — is free to use, modify and self-host.',
   },
   {
@@ -184,7 +184,7 @@ const faqs = [
   },
   {
     q: 'How is this different from my own WebSocket server?',
-    a: 'A raw WebSocket forwards what clients send. Openfire rooms are server-authoritative: the server runs your rules, sends every player the same state (a full picture about once a second plus small updates that repair themselves), reconnects dropped players for 15 seconds, and enforces chat and moderation limits. You write the game; the networking is done.',
+    a: 'A raw WebSocket forwards what clients send. Livefire rooms are server-authoritative: the server runs your rules, sends every player the same state (a full picture about once a second plus small updates that repair themselves), reconnects dropped players for 15 seconds, and enforces chat and moderation limits. You write the game; the networking is done.',
   },
 ];
 
@@ -246,9 +246,9 @@ const hl = (src: string): string => {
   return out;
 };
 
-const snippetMultiplayer = `import { Openfire } from 'openfire-sdk';
+const snippetMultiplayer = `import { Livefire } from 'openfire-sdk';
 
-const game = await Openfire.join({
+const game = await Livefire.join({
   host: 'https://play.holotype.com.sg', // hosted node (preview)
   roomKey,                              // from POST /v1/rooms
   joinToken,                            // one-time, from the API
@@ -287,10 +287,10 @@ at://did:plc:x4y…/com.openfire.matchEvent/3kh5t…`;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Openfire — a multiplayer server for your game</title>
+    <title>Livefire — a multiplayer server for your game</title>
     <meta
       name="description"
-      content="Open source multiplayer server: chat, shared-state and physics rooms from a settings file. Self-host with one command; players connect from any language."
+      content="Open source multiplayer server: chat, shared-state and physics rooms from a settings file. Self-host with Docker Compose; players connect from any language."
     />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script is:inline>
@@ -305,9 +305,9 @@ at://did:plc:x4y…/com.openfire.matchEvent/3kh5t…`;
 
     <header class="top" id="top">
       <div class="wrap bar">
-        <a class="logo" href="/" aria-label="Openfire home">
+        <a class="logo" href="/" aria-label="Livefire home">
           <span class="logo-mark" aria-hidden="true"></span>
-          Open<span class="accent">fire</span>
+          Live<span class="accent">fire</span>
         </a>
         <button
           class="menu-toggle"
@@ -344,7 +344,7 @@ at://did:plc:x4y…/com.openfire.matchEvent/3kh5t…`;
             <span class="ember">multiplayer server.</span>
           </h1>
           <p class="pitch">
-            Openfire is an open-source multiplayer server: chat, shared-state
+            Livefire is an open-source multiplayer server: chat, shared-state
             and physics rooms for your game. Run it yourself with one
             command, or use the hosted node — live in preview. Players
             connect from any language.
@@ -361,13 +361,8 @@ at://did:plc:x4y…/com.openfire.matchEvent/3kh5t…`;
               <span class="mi" set:html={icons.github} />Star on GitHub
             </a>
           </p>
-          <p class="hero-terminal" aria-label="One command to self-host">
-            <span class="prompt" aria-hidden="true">$</span>
-            <code>docker compose up -d</code>
-            <button class="copy" data-copy="docker compose up -d" aria-label="Copy command">
-              <span class="mi mi-copy" set:html={icons.copy} />
-              <span class="mi mi-done" set:html={icons.check} />
-            </button>
+          <p class="hero-terminal">
+            <a href="/docs/self-hosting/">Self-host Livefire with Docker Compose</a>
           </p>
         </div>
 
@@ -653,7 +648,7 @@ at://did:plc:x4y…/com.openfire.matchEvent/3kh5t…`;
         <div>
           <span class="logo">
             <span class="logo-mark" aria-hidden="true"></span>
-            Open<span class="accent">fire</span>
+            Live<span class="accent">fire</span>
           </span>
           <p class="run">
             Open-source multiplayer rooms. MIT license ·

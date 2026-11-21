@@ -1,6 +1,6 @@
 name: rooms_atproto
 description: >-
-  AT Protocol identity for Openfire: OAuth sign-in helpers (loopback flow
+  AT Protocol identity for Livefire: OAuth sign-in helpers (loopback flow
   for desktop apps), a DID-scoped session vault, session restore/refresh,
   and the client helper for the rooms node's atproto auth provider. Pure
   identity — no rooms, repos, blobs or game coupling. (Directory keeps the

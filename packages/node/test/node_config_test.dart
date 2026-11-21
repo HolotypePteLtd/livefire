@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:rooms_node/rooms_node.dart';
 import 'package:test/test.dart';
@@ -98,6 +99,16 @@ void main() {
     expect(config.limits.idleTtlSeconds, 60);
     expect(config.joinTokenTtlSeconds, 600);
     expect(config.physics, isTrue);
+  });
+
+  test('the shipped self-hosting example starts with guest auth', () {
+    final example = File('../../deploy/node.example.json').readAsStringSync();
+    final config = NodeConfig.fromJson(
+      jsonDecode(example) as Map<String, dynamic>,
+    );
+    expect(config.auth.providers, ['guest']);
+    expect(config.auth.atproto, isNull);
+    expect(config.adminDids, isEmpty);
   });
 
   test('adminDids defaults to empty (panel disabled) and parses DIDs', () {

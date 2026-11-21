@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Applies the Openfire migrations inside a Supabase PostgreSQL container.
+# Applies the Livefire migrations inside a Supabase PostgreSQL container.
 #
 # SUPABASE_DB_CONTAINER=<name> ./scripts/apply-migrations.sh
 set -euo pipefail

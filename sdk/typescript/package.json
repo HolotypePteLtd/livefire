@@ -2,7 +2,7 @@
   "name": "openfire-sdk",
   "version": "0.1.0",
   "private": true,
-  "description": "TypeScript client SDK for Openfire rooms: join, server-decided state, commands, chat and resume over the documented JSON wire protocol.",
+  "description": "TypeScript client SDK for Livefire rooms: join, server-decided state, commands, chat and resume over the documented JSON wire protocol.",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"

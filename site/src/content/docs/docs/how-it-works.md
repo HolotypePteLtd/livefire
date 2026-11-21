@@ -3,7 +3,7 @@ title: How it works
 description: Your rules run on a steady server clock; every player sees the same state, even over flaky networks.
 ---
 
-A quick mental model of what Openfire does under the hood — useful for the *"wait, why does it work like that?"* moments.
+A quick mental model of what Livefire does under the hood — useful for the *"wait, why does it work like that?"* moments.
 
 ## 1. One source of truth
 
@@ -24,7 +24,7 @@ Moving from local play to a dedicated internet server is a configuration change,
 
 | Hosting shape | How it runs |
 | :--- | :--- |
-| **Dedicated server** | One Openfire node hosts hundreds of rooms behind HTTPS + `/v1` HTTP API. |
+| **Dedicated server** | One Livefire node hosts hundreds of rooms behind HTTPS + `/v1` HTTP API. |
 | **In-process / player-hosted** | `RoomHub` runs directly inside your game process or browser worker over an in-memory or peer transport. |
 
 ## 3. Built for flaky connections

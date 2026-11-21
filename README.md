@@ -1,10 +1,10 @@
-# Openfire
+# Livefire
 
 **Authoritative multiplayer rooms, realtime chat, and server-side physics — self-hosted on a single port.**
 
-Openfire is a transport-agnostic room engine with a fixed-step authoritative simulation loop, baseline/delta state replication, automatic reconnects, built-in chat and moderation, and optional AT Protocol (Bluesky) identity. Speak it from **Dart**, **TypeScript**, or **any language** over the open JSON/binary WebSocket protocol.
+Livefire is a transport-agnostic room engine with a fixed-step authoritative simulation loop, baseline/delta state replication, automatic reconnects, built-in chat and moderation, and optional AT Protocol (Bluesky) identity. Speak it from **Dart**, **TypeScript**, or **any language** over the open JSON/binary WebSocket protocol.
 
-> **Package naming note:** The product is **Openfire**. The Dart packages keep their original identifiers (`protocol`, `client`, `server_sdk`, `physics_react3d`, `rooms_atproto`, `rooms_node`), so existing imports and path dependencies stay unchanged.
+> The existing Dart package names and the TypeScript package `openfire-sdk` still work. TypeScript clients can import `Livefire` or the existing `Openfire` alias.
 
 ---
 
@@ -18,7 +18,7 @@ Openfire is a transport-agnostic room engine with a fixed-step authoritative sim
              │    Bearer <API key>                             │    wss://host/play/<roomKey>?token=<jt_…>
              ▼                                                 ▼
   ┌──────────────────────────────────────────────────────────────────────────────┐
-  │                         Openfire Node (one port)                             │
+  │                         Livefire Node (one port)                             │
   │                                                                              │
   │   /v1/*         Control plane   ──► create rooms, mint join tokens, drain    │
   │   /play/<key>   Data plane      ──► RoomHub (fixed-step sim, deltas, chat)   │
@@ -47,15 +47,18 @@ Every room type includes **chat**, **roster**, **pings**, **lock/kick/ban modera
 ### Option A — Use the TypeScript SDK (hosted or self-hosted node)
 
 ```ts
-import { Openfire } from 'openfire-sdk';
+import { Livefire } from 'openfire-sdk';
 
 // 1. Backend: create a room and mint a one-time join token
-const api = Openfire.admin(process.env.OPENFIRE_API_KEY!);
+const api = Livefire.admin(
+  process.env.LIVEFIRE_API_KEY!,
+  process.env.LIVEFIRE_URL!, // Your node origin, e.g. https://rooms.example.com
+);
 const room = await api.createRoom({ template: 'relay', capacity: 16 });
 const { joinToken } = await api.mintToken(room);
 
 // 2. Client: join, chat, and subscribe to authoritative state
-const game = await Openfire.join({ url: room.url, joinToken, name: 'Alice' });
+const game = await Livefire.join({ url: room.url, joinToken, name: 'Alice' });
 game.chat.send('hello!');
 game.onState((state) => render(state));
 ```
@@ -148,23 +151,10 @@ await alice.close();
 
 ## Running a node
 
-### Local
-
-```sh
-cd packages/node
-cp ../../deploy/node.example.json /tmp/node.json   # edit secrets
-dart run bin/node.dart --config /tmp/node.json
-```
-
-### Docker Compose (with automatic HTTPS via Caddy)
-
-```sh
-DOMAIN=rooms.example.com docker compose up -d
-```
-
-`docker-compose.yml` runs the unprivileged AOT node binary behind Caddy (automatic Let's Encrypt TLS + transparent WebSocket upgrades) and serves the static docs site from the same origin. See [`deploy/Caddyfile`](deploy/Caddyfile) and [`deploy/coolify/`](deploy/coolify) for reverse-proxy routing.
-
-> **Running behind a reverse proxy?** Set `"trustedProxies": ["172.18.0.1"]` (or your proxy IP) in `node.json` so per-IP rate limiting uses `X-Forwarded-For` instead of the proxy's address.
+[Follow the Docker Compose quickstart](site/src/content/docs/docs/self-hosting.md)
+to start your own Livefire node, verify the API and create a room. The
+quickstart uses guest joins and SQLite. It also covers running locally
+with Dart and adding optional Bluesky sign-in or Supabase.
 
 ---
 

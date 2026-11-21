@@ -1,7 +1,7 @@
 name: rooms_node
 description: Self-contained rooms server - supervisor, the rooms HTTP API and the WebSocket listener behind one port, with the reactphysics3d movement backend wired.
 version: 0.1.0
-homepage: https://github.com/HolotypePteLtd/openfire
+homepage: https://github.com/HolotypePteLtd/livefire
 publish_to: none
 environment:
   sdk: ^3.12.0

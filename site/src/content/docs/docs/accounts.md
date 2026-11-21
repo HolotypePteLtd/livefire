@@ -18,18 +18,20 @@ requires it).
 ## 1. Make the server's private key (once)
 
 The server signs its sign-in requests with a private key. Generate one
-next to your checkout — the shipped Docker setup mounts it from there:
+at the root of your checkout. From that directory, run:
 
 ```sh
-cd packages/node
-dart run tool/gen_client_jwks.dart ../../oauth-client-jwks.json
+(umask 077; cd packages/node && dart run tool/gen_client_jwks.dart ../../oauth-client-jwks.json)
+sudo chown 10001:10001 oauth-client-jwks.json
+sudo chmod 400 oauth-client-jwks.json
 ```
 
 Keep the file like a password: back it up once, don't commit it to git.
 
 ## 2. Turn sign-in on in `node.json`
 
-Add this block (and restart the server):
+Open `node.json` with `sudoedit` if it is owned by the node’s UID.
+Replace the guest-only `auth` block with:
 
 ```json
 "auth": {
@@ -42,6 +44,15 @@ Add this block (and restart the server):
   }
 }
 ```
+
+Apply the change with the optional OAuth mount:
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.atproto.yml up -d --force-recreate rooms-node
+```
+
+Use both Compose files for subsequent updates to an OAuth-enabled node.
+For a native process, set `jwksPath` to the private file on that host.
 
 This adds "sign in with Bluesky" next to normal guest entry. `guest`
 stays first, so nothing changes for players who skip sign-in. When a
@@ -82,6 +93,4 @@ watch for the result at `/auth/result` — the exact endpoints are in the
 - Where the accounts themselves can live — Bluesky's servers (the
   default) or your own: [Where accounts live](/docs/where-accounts-live/).
 - Publishing match results and achievements as public records on the
-  player's account is an opt-in server feature, off by default — the
-  player sees one plain question before anything is written. Design:
-  the repository's shareable-rooms notes.
+  player's account is an opt-in server feature. See the [match event guide](https://github.com/HolotypePteLtd/livefire/blob/master/docs/match_events.md).

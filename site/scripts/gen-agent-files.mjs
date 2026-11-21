@@ -23,7 +23,7 @@ function plainMarkdown(file, baseDir) {
   return text.trim();
 }
 
-const llmsTxt = `# Openfire
+const llmsTxt = `# Livefire
 
 > These docs are for humans too — start with Instant multiplayer server.
 >
@@ -36,7 +36,7 @@ const llmsTxt = `# Openfire
 
 ## Docs
 
-- [Overview](/docs/): what Openfire gives you; the open-protocol story.
+- [Overview](/docs/): what Livefire gives you; the open-protocol story.
 - [Instant multiplayer server](/docs/multiplayer-server/): the one-page path from zero to a running multiplayer backend — run the demo, wire the SDK into your game (RoomAuthority → RoomServer → RoomClient), chat and moderation, the hosted node in preview (play.holotype.com.sg, API key on request), put the rooms server online (Docker/Caddy), create rooms from a settings file via the HTTP API, connect players with join tokens (audience: non-engineers).
 - [Shared state rooms](/docs/shared-state-rooms/): the relay template — settings-file reference (playerKeys/roomKeys quotas), publish/publishRoom commands, reading replicated state.
 - [Physics rooms](/docs/physics-rooms/): the physics template — colliders/spawn/movement/inputMapping config, the input command, server-simulated poses, anti-cheat.
@@ -136,10 +136,10 @@ const sections = [
   },
 ];
 
-const header = `# Openfire — full documentation
+const header = `# Livefire — full documentation
 
-> Single-file export of the Openfire docs site for text models.
-> Source of truth: the Openfire repository (docs/, packages/, examples/).
+> Single-file export of the Livefire docs site for text models.
+> Source of truth: the Livefire repository (docs/, packages/, examples/).
 
 ## Contents
 

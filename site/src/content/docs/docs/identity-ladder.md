@@ -74,22 +74,22 @@ session is never a lost account.
 ## In the TypeScript SDK
 
 ```ts
-import { Openfire, openKeystore } from 'openfire-sdk';
+import { Livefire, openKeystore } from 'openfire-sdk';
 
 // Day 0 — one call on every boot: creates the account on first launch,
 // revives it afterwards (cached session, or a recovery proof).
-const account = await Openfire.deviceAccount.create({
+const account = await Livefire.deviceAccount.create({
   host: 'https://play.example.com',
   roomKey: room.roomKey,   // optional: mint a join token immediately
   keystore: openKeystore(), // default: encrypted IndexedDB
 });
 
-// Play — the same Room surface as Openfire.join().
+// Play — the same Room surface as Livefire.join().
 const game = await account.joinRoom({ roomKey: room.roomKey, name: 'Sam' });
 
 // New device / cleared storage: the sealed keystore record is all that
 // must survive. Same did, fresh session.
-const back = await Openfire.deviceAccount.recover({
+const back = await Livefire.deviceAccount.recover({
   host: 'https://play.example.com',
   keystore: openKeystore(), // reads the surviving record
 });

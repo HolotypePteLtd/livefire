@@ -1,4 +1,4 @@
-# Coolify deployment of the Openfire rooms node (dockercompose build pack).
+# Coolify deployment of the Livefire rooms node (dockercompose build pack).
 #
 # Traefik (Coolify's proxy) terminates TLS for the assigned domain and
 # routes to rooms-node on the container port. The docs can run separately.

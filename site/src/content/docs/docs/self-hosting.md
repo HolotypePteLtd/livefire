@@ -3,32 +3,100 @@ title: Self-hosting
 description: The rooms server reference — config fields, TLS proxy, deployment checklist, running without Docker.
 ---
 
-> You only need this section if you want the details. The walkthrough is
-> [Instant multiplayer server → Put the server on the
-> internet](/docs/multiplayer-server/#4-put-the-server-on-the-internet).
+## Deploy with Docker Compose
 
-One process, one port; TLS terminates at a reverse proxy. The shipped
-`docker-compose.yml` runs the rooms server behind **Caddy** (automatic
-Let's Encrypt for your `DOMAIN`, WebSocket upgrades transparent) and serves
-this static site from the same origin.
+Livefire runs on a Linux host with Docker Compose. You’ll need Git,
+OpenSSL, curl, and a domain pointing to the host. Open inbound TCP ports
+80 and 443 for Caddy’s automatic HTTPS. UDP port 443 is optional for
+HTTP/3. This setup uses guest players and SQLite.
 
-What comes up with `docker compose up -d`:
+### 1. Clone and configure
 
-| Service | Role |
-| --- | --- |
-| `rooms-node` | the server binary (`packages/node`): `/v1/*` HTTP API + `/play/<roomKey>` WebSockets on one port, SQLite in the `rooms-data` volume |
-| `site` | one-shot init container that builds this site and publishes `dist/` into the shared `rooms-site` volume |
-| `caddy` | TLS (HTTP/2 + HTTP/3), proxies `/v1/*` and `/play/*` to the server, serves everything else (docs, `llms.txt`, `/spec/*`) from the site volume |
+```sh
+git clone https://github.com/HolotypePteLtd/livefire
+cd livefire
+```
 
-The image is a multi-stage build: the build stage compiles the
-ReactPhysics3D native library and the AOT bundle (`dart build cli` — native
-assets linked by build hooks); the runtime is `debian:bookworm-slim`,
-unprivileged, with `libsqlite3`.
+Replace `rooms.example.com` with your domain, then run this once from
+the checkout. Keep the API key on your game backend.
 
-Bluesky sign-in needs one extra file mounted — see
-[Player accounts](/docs/accounts/). The same block powers the
-[developer panel](/docs/panel/): add your DID to `adminDids` and
-`https://<DOMAIN>/panel` becomes your key dashboard.
+```sh
+DOMAIN=rooms.example.com
+LIVEFIRE_API_KEY=$(openssl rand -hex 32)
+LIVEFIRE_NODE_SECRET=$(openssl rand -hex 32)
+
+(
+  umask 077
+  printf 'DOMAIN=%s\n' "$DOMAIN" > .env
+  cat > node.json <<EOF
+{
+  "publicBaseUrl": "https://$DOMAIN",
+  "nodeSecret": "$LIVEFIRE_NODE_SECRET",
+  "apiKeys": {"default": "$LIVEFIRE_API_KEY"},
+  "dataDir": "/var/lib/rooms",
+  "allowedOrigins": ["https://$DOMAIN"],
+  "auth": {"providers": ["guest"]}
+}
+EOF
+)
+
+sudo chown 10001:10001 node.json
+sudo chmod 400 node.json
+```
+
+The node container reads `node.json` as UID `10001`. If the game runs on
+another web origin, add that origin to `allowedOrigins` with `sudoedit node.json`.
+Native WebSocket clients must send an allowed `Origin` when the list is
+configured.
+
+### 2. Start and check the API
+
+```sh
+docker compose up -d --build
+docker compose ps -a
+curl --fail-with-body --silent --show-error --write-out '\nHTTP %{http_code}\n' \
+  -H "Authorization: Bearer $LIVEFIRE_API_KEY" \
+  "https://$DOMAIN/v1/rooms"
+```
+
+Run the curl command in the shell that generated the API key. Expect
+`HTTP 200` and an empty `rooms` list on a fresh node. The one-shot `site`
+container should exit with code `0` after building the docs. If the API
+check fails, inspect `docker compose logs rooms-node caddy`. Check DNS
+and inbound ports if Caddy is still obtaining the certificate.
+
+### 3. Create a room
+
+```sh
+curl --fail-with-body --silent --show-error --write-out '\nHTTP %{http_code}\n' \
+  -X POST "https://$DOMAIN/v1/rooms" \
+  -H "Authorization: Bearer $LIVEFIRE_API_KEY" \
+  -H 'Content-Type: application/json' \
+  --data '{
+    "template": "relay",
+    "config": {
+      "version": 1,
+      "template": "relay",
+      "capacity": 8,
+      "maxRows": 64,
+      "totalBytes": 32768,
+      "playerKeys": {"pose": {"maxBytes": 256, "publishesPerSecond": 10}},
+      "roomKeys": {}
+    }
+  }'
+```
+
+Expect `HTTP 201`, a `wss://` room URL and a one-time `joinToken`. Give
+the URL and token to the first player. Mint a new token for each
+additional player with [the room token endpoint](/docs/api/).
+
+The Compose stack serves the API and WebSockets through Caddy and
+publishes the docs at `https://<your-domain>/docs/`. Back up `node.json`,
+`.env`, and the `rooms-data` volume. Room configuration survives a
+restart. Live simulation state is held in memory.
+
+For Bluesky sign-in and the developer panel, see [Player accounts](/docs/accounts/).
+Supabase is optional and is covered [below](#platform-data-in-supabase).
 
 ## Server config reference (`node.json`)
 
@@ -37,10 +105,11 @@ Bluesky sign-in needs one extra file mounted — see
 | `publicBaseUrl` | string | — | Origin used to build room URLs (`wss://…/play/<key>`); must match the public domain behind Caddy |
 | `nodeSecret` | string | 16+ chars | HMAC key for join/creator tokens; generate 32+ random characters |
 | `apiKeys` | object | — | Service keys (name → secret) — **bootstrap ADMIN keys** (`Authorization: Bearer <key>`), hashed at boot; in Postgres mode they never become database rows |
-| `dataDir` | string | `/var/lib/rooms` | SQLite directory (persist it — join-token consumption and room pins survive restarts) |
+| `dataDir` | string | Required | SQLite directory (persist it — join-token consumption and room pins survive restarts) |
 | `listen.port` | int | 8787, 1024–65535 | Server listen port (plain HTTP; TLS is the proxy's job) |
 | `listen.address` | string | `0.0.0.0` | Bind address |
-| `allowedOrigins` | string[] | — | Origin allowlist enforced before the WebSocket upgrade |
+| `allowedOrigins` | string[] | `[]` | Allowed WebSocket origins. An empty list accepts any origin |
+| `trustedProxies` | string[] | `[]` | IP addresses of reverse proxies trusted to supply the client IP for rate limiting |
 | `adminDids` | string[] | `[]` | DIDs allowed into the [developer panel](/docs/panel/) at `/panel` (sign in with Bluesky). Empty disables the panel; config `apiKeys` are bootstrap ADMIN keys, read-only there. In Postgres mode this list only **seeds** the admin table once — afterwards admins are managed in the panel |
 | `limits.maxRooms` | int | 256 | Concurrent rooms; beyond → `quota_exceeded` |
 | `limits.maxReservedCapacity` | int | 4096 | Sum of room capacities; beyond → `quota_exceeded` |
@@ -54,53 +123,19 @@ Config is fail-fast: unknown or out-of-range fields abort startup.
 
 ## TLS via Caddy
 
-`deploy/Caddyfile`:
+The [Caddyfile](https://github.com/HolotypePteLtd/livefire/blob/master/deploy/Caddyfile)
+forwards the room API, WebSockets, identity and panel routes to the node.
+Caddy serves the docs from the shared site volume. Only Caddy publishes
+ports on the host.
 
-```txt
-{$DOMAIN} {
-	encode zstd gzip
-	handle /v1/* {
-		reverse_proxy rooms-node:8787
-	}
-	handle /play/* {
-		reverse_proxy rooms-node:8787
-	}
-	handle {
-		root * /srv/site
-		try_files {path} {path}/
-		file_server
-	}
-}
-```
-
-- Set `DOMAIN` (and optionally `ACME_EMAIL`) in the compose environment;
-  certificates are issued and renewed automatically.
-- HTTP/3 is enabled (`443/udp` is published).
-- The server's routes are explicit; everything else is the static site, so
-  `https://your-domain/` is the docs, `https://your-domain/v1/…` the API,
-  `https://your-domain/llms.txt` the agent index.
-
-## Deployment checklist (e.g. Hetzner)
-
-1. A server with Docker and ports 80/443 (TCP + UDP 443) open.
-2. DNS A/AAAA record for your domain → server IP (must resolve before
-   Let's Encrypt will issue).
-3. `.env` with `DOMAIN`, `ACME_EMAIL` (the physics dependency is public —
-   no build token needed).
-4. `node.json` from `deploy/node.example.json` — new `nodeSecret`, real
-   `apiKeys`, your game origins in `allowedOrigins`, `publicBaseUrl` =
-   `https://<DOMAIN>`.
-5. `docker compose up -d --build`; check `docker compose ps` and
-   `docker compose logs caddy`.
-6. Smoke test: `curl -s https://<DOMAIN>/v1/rooms` → `401` (Caddy + server +
-   auth all working); `https://<DOMAIN>/llms.txt` → this site.
-7. Backups: the `rooms-data` volume (SQLite). Room **state** is memory-only
-   by design; rooms are lazily recreated from their pinned config on the
-   next join after a restart.
+For per-player throttling behind a proxy, put the direct proxy IP in
+`trustedProxies`. With the default empty list, the node counts connections
+by the address of its direct peer. If the proxy is recreated with a
+different IP, update the configured address.
 
 ## Deploy with Coolify and Traefik
 
-The [Coolify example](https://github.com/HolotypePteLtd/openfire/tree/master/deploy/coolify)
+The [Coolify example](https://github.com/HolotypePteLtd/livefire/tree/master/deploy/coolify)
 runs the rooms node behind Traefik. Route the node's domain to port
 `8787`, terminate TLS at the proxy, and set `publicBaseUrl` to the
 external HTTPS origin. You can deploy the docs separately as a static
@@ -137,17 +172,30 @@ in-memory cache. Creating rooms with panel-issued keys requires an
 authoritative quota check in Postgres. Unset the two variables and
 restart to return to SQLite mode.
 
-## Running without Docker
+## Run locally with Dart
+
+Install Dart 3.12 or newer and the native build tools `clang` and
+`cmake`. From the repository root, copy the example into a private
+temporary directory.
+
+```sh
+livefire_local_dir=$(mktemp -d)
+cp deploy/node.example.json "$livefire_local_dir/node.json"
+```
+
+In that file, replace the example secrets, set `publicBaseUrl` to
+`http://127.0.0.1:8787`, and set `listen.address` to `127.0.0.1`.
+Use a writable absolute path for `dataDir` and set `allowedOrigins`
+to `[]` for local development.
 
 ```sh
 cd packages/node
-cp ../../deploy/node.example.json /tmp/node.json   # then edit secrets
-dart run bin/node.dart --config /tmp/node.json     # physics rooms included
+dart run bin/node.dart --config "$livefire_local_dir/node.json"
 ```
 
-The server handles SIGINT/SIGTERM by draining (rooms closed, peers get 1001).
-See the [HTTP API reference](/docs/api/) for the endpoint contract and its
-implementation notes.
+Use the API check above against `http://127.0.0.1:8787/v1/rooms` with
+the key you saved in the local config. Clients on this node receive
+`ws://` room URLs.
 
 ## Docs elsewhere, server here (split origins)
 

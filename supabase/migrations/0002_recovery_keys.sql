@@ -25,7 +25,7 @@ create table if not exists public.recovery_keys (
 );
 
 comment on table public.recovery_keys is
-  'Openfire guest identity ladder: the client-held recovery public key '
+  'Livefire guest identity ladder: the client-held recovery public key '
   'per device-account DID. App-level recovery only — the PDS-level '
   'rotation key stays with the node operator (see the trust note in the '
   'identity ladder docs).';

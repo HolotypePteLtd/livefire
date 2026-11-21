@@ -1,4 +1,4 @@
-/// AT Protocol identity for Openfire.
+/// AT Protocol identity for Livefire.
 ///
 /// Extracted from an existing game accounts stack
 /// and stripped of every room/repository concern: this package only knows

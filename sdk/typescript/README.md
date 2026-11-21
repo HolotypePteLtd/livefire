@@ -1,6 +1,6 @@
 # openfire-sdk (TypeScript)
 
-TypeScript client for [Openfire](https://github.com/HolotypePteLtd/openfire)
+TypeScript client for [Livefire](https://github.com/HolotypePteLtd/livefire)
 rooms. Speaks the documented JSON wire protocol
 ([/spec/rooms-protocol.json](../../site/public/spec/rooms-protocol.json)) over
 one WebSocket: join/resume handshake, server-decided state with
@@ -15,19 +15,20 @@ Backend (three lines per match — the API key stays on your server), client
 
 ```ts
 // backend, per match
-const of = Openfire.admin(API_KEY);
+const of = Livefire.admin(API_KEY, NODE_URL);
 const room = await of.createRoom({ template: 'relay', capacity: 16 });
 const { joinToken } = await of.mintToken(room, playerName);
 
 // client, per player
-const game = await Openfire.join({
+const game = await Livefire.join({
   url: room.url,   // or host + roomKey
   joinToken,
   name: 'Sam',
 });
 ```
 
-`Openfire.admin(apiKey, host?)` defaults to the hosted node
+Set `NODE_URL` to your server origin when self-hosting.
+`Livefire.admin(apiKey, host?)` defaults to the hosted node
 (`https://play.holotype.com.sg`) and is a thin wrapper over the node's
 `/v1` routes: `createRoom` (sensible relay defaults when you pass only
 `template` + `capacity`; a full `config` for anything else), `mintToken`,
@@ -42,7 +43,7 @@ docs](../../site/src/content/docs/docs/panel.md) when running your own.
 
 ## Quickstart — hosted node (preview)
 
-A hosted Openfire node is live at
+A hosted Livefire node is live at
 <https://play.holotype.com.sg> (preview — ask us for an API key;
 self-serve signup is not available yet). Mint a room and a one-time join
 token over the HTTP API, then join with `joinToken`:
@@ -60,9 +61,9 @@ curl -X POST https://play.holotype.com.sg/v1/rooms/<roomId>/tokens \
 ```
 
 ```ts
-import { Openfire } from 'openfire-sdk';
+import { Livefire } from 'openfire-sdk';
 
-const game = await Openfire.join({
+const game = await Livefire.join({
   host: 'https://play.holotype.com.sg', // the hosted node
   roomKey,                              // from POST /v1/rooms
   joinToken,                            // one-time, from the API
@@ -79,9 +80,9 @@ tokens server-side only.
 ## Quickstart — your own node
 
 ```ts
-import { Openfire } from 'openfire-sdk';
+import { Livefire } from 'openfire-sdk';
 
-const game = await Openfire.join({
+const game = await Livefire.join({
   host: 'http://localhost:8790',   // your node
   roomKey: 'demo-room',
   name: 'Sam',
@@ -115,7 +116,7 @@ listed — is rejected.
   ```ts
   import WebSocket from 'ws'; // headers-capable WebSocket (devDependency)
 
-  const game = await Openfire.join({
+  const game = await Livefire.join({
     host: 'https://play.holotype.com.sg',
     roomKey,
     joinToken,
@@ -133,8 +134,8 @@ listed — is rejected.
 
 | Member | Meaning |
 | --- | --- |
-| `Openfire.join(options)` | Connect + join (or resume); resolves at the first applied state frame. `url` (the API's `room.url`, `?token=` included) or `host` + `roomKey` |
-| `Openfire.admin(apiKey, host?)` | Control plane: `createRoom`, `mintToken`, `listRooms`, `deleteRoom` (thin `/v1` wrappers; host defaults to the hosted node) |
+| `Livefire.join(options)` | Connect + join (or resume); resolves at the first applied state frame. `url` (the API's `room.url`, `?token=` included) or `host` + `roomKey` |
+| `Livefire.admin(apiKey, host?)` | Control plane: `createRoom`, `mintToken`, `listRooms`, `deleteRoom` (thin `/v1` wrappers; host defaults to the hosted node) |
 | `room.playerId` / `capacity` / `resumeToken` | Facts from `welcome` |
 | `room.state` | Latest decoded state (game-defined JSON + `tick`/`epoch`) |
 | `room.onState(cb)` | Every applied snapshot/delta (already acked by the SDK) |

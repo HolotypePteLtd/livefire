@@ -1,4 +1,4 @@
-export { Openfire, Room } from './openfire.ts';
+export { Livefire, Openfire, Room } from './openfire.ts';
 export {
   deviceAccount,
   generateRecoveryKeyPair,

@@ -20,7 +20,7 @@
  * and gets a fresh session for the SAME did. The play surface is the
  * usual one: create/recover accept a `room` and return a one-time join
  * token for it, so `joinRoom()` hands back the same `Room` as
- * `Openfire.join()`.
+ * `Livefire.join()`.
  *
  * TRUST NOTE (verbatim from the docs): the node operator holds the
  * PDS-level rotation key and therefore outranks the client recovery
@@ -68,7 +68,7 @@ export interface DeviceAccount {
   keystore: Keystore;
   /**
    * Joins a room as this account — the same `Room` surface as
-   * `Openfire.join()`. When the account was minted for a different
+   * `Livefire.join()`. When the account was minted for a different
    * room (or none), it re-proves the recovery key first and joins with
    * the fresh token.
    */

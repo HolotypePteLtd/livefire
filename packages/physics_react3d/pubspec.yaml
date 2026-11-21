@@ -1,7 +1,7 @@
 name: physics_react3d
 description: reactphysics3d_dart PhysicsBackend for movement room templates - engine binding only, all game logic lives in server_sdk.
 version: 0.1.0
-homepage: https://github.com/HolotypePteLtd/openfire
+homepage: https://github.com/HolotypePteLtd/livefire
 publish_to: none
 environment:
   sdk: ^3.12.0

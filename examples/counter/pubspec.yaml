@@ -1,5 +1,5 @@
 name: counter
-description: Minimal Openfire example - a shared counter room with chat, hosted by a real RoomServer.
+description: Minimal Livefire example - a shared counter room with chat, hosted by a real RoomServer.
 version: 0.1.0
 publish_to: none
 environment:

@@ -1,4 +1,4 @@
-# Cloudflare Pages configuration for the Openfire docs site.
+# Cloudflare Pages configuration for the Livefire docs site.
 #
 # Choice: Pages (direct upload / git-integrated), NOT Workers static assets.
 # Reasons:

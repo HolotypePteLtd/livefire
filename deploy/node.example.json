@@ -4,7 +4,6 @@
   "apiKeys": {
     "default": "CHANGE-ME-service-key"
   },
-  "adminDids": ["did:plc:REPLACE-with-your-Bluesky-DID"],
   "dataDir": "/var/lib/rooms",
   "listen": { "port": 8787, "address": "0.0.0.0" },
   "allowedOrigins": ["https://game.example.com"],
@@ -16,15 +15,7 @@
   },
   "joinTokenTtlSeconds": 900,
   "physics": true,
-  "auth": {
-    "providers": ["guest", "atproto"],
-    "atproto": {
-      "clientName": "rooms example node",
-      "entrywayUrl": "https://bsky.social",
-      "plcDirectoryUrl": "https://plc.directory",
-      "jwksPath": "/etc/rooms/oauth-client-jwks.json"
-    }
-  },
+  "auth": {"providers": ["guest"]},
   "publishEvents": {
     "enabled": false,
     "gameId": "com.example.yourgame",

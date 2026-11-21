@@ -1,6 +1,5 @@
-# TLS terminates here (Let's Encrypt auto; set DOMAIN, optionally
-# ACME_EMAIL, in the compose environment). WebSockets need no extra
-# directives — reverse_proxy upgrades them transparently.
+# Set DOMAIN in the Compose environment to enable automatic HTTPS.
+# Caddy's reverse proxy upgrades WebSocket requests automatically.
 #
 # Routing split: the node keeps the API and play paths; the static docs
 # site (landing page, /docs/*, llms.txt, /spec/*) is served from the

@@ -24,7 +24,7 @@ export default defineConfig({
   build: { inlineStylesheets: 'never' },
   integrations: [
     starlight({
-      title: 'Openfire',
+      title: 'Livefire',
       description:
         'Authoritative multiplayer rooms, realtime chat and server-side physics over an open wire protocol.',
       favicon: '/favicon.svg',

@@ -13,7 +13,7 @@ const String panelPageHtml = r'''
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Openfire — developer panel</title>
+<title>Livefire — developer panel</title>
 <link rel="stylesheet" href="/panel/panel.css?v=2">
 <link rel="icon" href="data:,">
 </head>
@@ -179,7 +179,7 @@ button.small:hover { color: var(--red); border-color: var(--red); filter: none; 
 ''';
 
 const String panelAppJs = r'''
-// Openfire developer panel — vanilla JS, no dependencies. The session is
+// Livefire developer panel — vanilla JS, no dependencies. The session is
 // a ps_ bearer token (12 h) kept in localStorage and sent on every API
 // call; sign-in runs the node's atproto OAuth flow in a popup while this
 // page polls its result.

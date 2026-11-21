@@ -1,7 +1,7 @@
 name: world_demo
 description: Visual world demo - a kinematic movement authority (speed-clamped inputs, bounded area) for the in-browser room server. No physics engine; the production physics template uses ReactPhysics3D and is out of this demo's scope.
 version: 0.1.0
-homepage: https://github.com/HolotypePteLtd/openfire
+homepage: https://github.com/HolotypePteLtd/livefire
 publish_to: none
 environment:
   sdk: ^3.12.0

@@ -105,14 +105,15 @@ minting join tokens — use the API; that part is two lines with the
 [TypeScript SDK](/docs/multiplayer-server/#the-hosted-node-preview-rooms-without-a-server):
 
 ```ts
-const of = Openfire.admin(API_KEY);
+const of = Livefire.admin(API_KEY, NODE_URL);
 const room = await of.createRoom({ template: 'relay', capacity: 16 });
 ```
 
 ## Running it on your own node
 
-Nothing to deploy — the panel is part of the node binary. Two config
-lines in `node.json`:
+The panel is part of the node binary. Follow the [player account setup](/docs/accounts/)
+to enable OAuth and mount the signing key. Then set `adminDids` in
+`node.json`:
 
 ```json
 {

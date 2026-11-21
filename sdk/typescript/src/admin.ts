@@ -1,11 +1,11 @@
 /**
  * The admin namespace — the control plane as three lines of backend
- * code. `Openfire.admin(apiKey)` wraps the node's existing `/v1` routes
+ * code. `Livefire.admin(apiKey)` wraps the node's existing `/v1` routes
  * (`docs/control_plane_api.md`) with fetch; nothing is invented here,
  * and the API key never belongs in client code.
  *
  * ```ts
- * const of = Openfire.admin(API_KEY);
+ * const of = Livefire.admin(API_KEY);
  * const room = await of.createRoom({ template: 'relay', capacity: 16 });
  * const { joinToken } = await of.mintToken(room, playerName);
  * ```
@@ -64,7 +64,7 @@ export interface CreateRoomOptions {
   extra?: Record<string, unknown>;
 }
 
-/** Everything `Openfire.admin(...)` returns. */
+/** Everything `Livefire.admin(...)` returns. */
 export interface AdminApi {
   createRoom(options: CreateRoomOptions): Promise<AdminRoom>;
   mintToken(

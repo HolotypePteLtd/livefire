@@ -20,7 +20,7 @@ create table if not exists public.guest_credentials (
 );
 
 comment on table public.guest_credentials is
-  'Openfire guest identity ladder: the generated app password per '
+  'Livefire guest identity ladder: the generated app password per '
   'device-account DID — the credential the node uses to write into '
   'the guest repo (createSession). Operator-held secret; see the '
   'trust note in the identity ladder docs.';

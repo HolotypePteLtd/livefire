@@ -1,4 +1,4 @@
-// A minimal Openfire application: a dedicated RoomServer runs in its own
+// A minimal Livefire application: a dedicated RoomServer runs in its own
 // isolate on a loopback socket; two RoomClients join over real WebSockets,
 // exchange chat through room social, and share a counter through a
 // RoomAuthority whose snapshot is replicated to everyone.

@@ -1,4 +1,4 @@
--- Openfire panel platform data, migration 0001 (idempotent).
+-- Livefire panel platform data, migration 0001 (idempotent).
 --
 -- Tables and functions for the node's PLATFORM half: panel admins,
 -- API keys (hash-only, scoped), usage counters and the audit log.
@@ -44,7 +44,7 @@ create table if not exists public.panel_admins (
 );
 
 comment on table public.panel_admins is
-  'Openfire panel admins: DIDs allowed into /panel. Seeded once from '
+  'Livefire panel admins: DIDs allowed into /panel. Seeded once from '
   'node.json adminDids (panel_seed_admins marker), managed from the '
   'panel afterwards.';
 
@@ -65,7 +65,7 @@ create table if not exists public.panel_api_keys (
 );
 
 comment on table public.panel_api_keys is
-  'Openfire panel-issued API keys (hash-only). Scopes: max_rooms null '
+  'Livefire panel-issued API keys (hash-only). Scopes: max_rooms null '
   '= unlimited, templates null = all templates. Bootstrap keys from '
   'node.json apiKeys are NOT rows here — they live in the node only.';
 
@@ -80,7 +80,7 @@ create table if not exists public.panel_audit_log (
 );
 
 comment on table public.panel_audit_log is
-  'Openfire panel audit trail: one row per mutating panel action.';
+  'Livefire panel audit trail: one row per mutating panel action.';
 
 -- One-shot markers (currently: adminDids seeding) so config lists are
 -- applied at most once per database; afterwards the DB is the truth.

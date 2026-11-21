@@ -1,6 +1,6 @@
 # Rooms Wire Protocol
 
-Openfire uses one room engine (`RoomHub`) across every hosting shape — dedicated server, in-process host, or player-hosted peer. Games implement `RoomAuthority` (validation, simulation, snapshots); the networking layer never imports game or physics types.
+Livefire uses one room engine (`RoomHub`) across every hosting shape — dedicated server, in-process host, or player-hosted peer. Games implement `RoomAuthority` (validation, simulation, snapshots); the networking layer never imports game or physics types.
 
 ---
 

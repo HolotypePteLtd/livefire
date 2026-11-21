@@ -5,11 +5,11 @@ description: Authoritative multiplayer rooms, realtime chat, and server-side phy
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-Openfire puts **authoritative multiplayer in your game** — chat, shared state, and server-side physics running on a single self-hosted port. Speak it from **TypeScript**, **Dart**, or **any language** over the open WebSocket protocol.
+Livefire puts **authoritative multiplayer in your game** — chat, shared state, and server-side physics running on a single self-hosted port. Speak it from **TypeScript**, **Dart**, or **any language** over the open WebSocket protocol.
 
 ```text
   Your Backend ── POST /v1/rooms ──► ┌─────────────────────────────────────────┐
-                                     │        Openfire Node (one port)         │
+                                     │        Livefire Node (one port)         │
   Players      ◄── WS /play/<key> ──►│  Fixed-step sim · Deltas · Chat · Auth  │
                                      └─────────────────────────────────────────┘
 ```

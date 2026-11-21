@@ -1,4 +1,4 @@
-# Openfire site
+# Livefire site
 
 Landing page + documentation site (Astro + Starlight, static build) with
 machine-readable agent endpoints.
@@ -156,7 +156,7 @@ node image, this Dockerfile uses its own `site/Dockerfile.dockerignore`
 (BuildKit per-Dockerfile ignore files).
 
 The GitHub links on the landing page point at
-`https://github.com/HolotypePteLtd/openfire` — adjust if the repository
+`https://github.com/HolotypePteLtd/livefire` — adjust if the repository
 moves.
 
 ## Editing

@@ -1,4 +1,4 @@
-# Deploy Openfire with Coolify and Traefik
+# Deploy Livefire with Coolify and Traefik
 
 The [Compose file](docker-compose.yml) runs the rooms node behind Coolify's
 Traefik proxy. Configure the node's domain in Coolify and route it to port
@@ -11,8 +11,8 @@ Traefik proxy. Configure the node's domain in Coolify and route it to port
 2. If you enable AT Protocol OAuth, generate the private client key on the
    host. Run `dart run tool/gen_client_jwks.dart /opt/openfire/oauth-client-jwks.json`
    from `packages/node`. Remove the JWKS mount if OAuth is disabled.
-3. The container runs as UID `10001`. Make both configuration files
-   readable by that UID, with mode `400`.
+3. The container runs as UID `10001`. Give that UID ownership of the
+   configuration files you mount and set their permissions to `400`.
 4. Set the build context to the repository root and deploy the Compose
    file. Set the exposed port to `"8787"` in Coolify.
 

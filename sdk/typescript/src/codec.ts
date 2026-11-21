@@ -1,5 +1,5 @@
 /**
- * Snapshot decoding for the Openfire JSON state lane, mirroring the
+ * Snapshot decoding for the Livefire JSON state lane, mirroring the
  * reference `SnapshotDecoder` in `packages/protocol`
  * (`snapshot_codec.dart`).
  *

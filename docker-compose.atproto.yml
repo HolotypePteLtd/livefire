@@ -1,0 +1,10 @@
+# Add with -f docker-compose.yml -f docker-compose.atproto.yml.
+services:
+  rooms-node:
+    volumes:
+      - type: bind
+        source: ./oauth-client-jwks.json
+        target: /etc/rooms/oauth-client-jwks.json
+        read_only: true
+        bind:
+          create_host_path: false

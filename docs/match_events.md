@@ -1,6 +1,6 @@
 # Publishing match events to AT Protocol
 
-Openfire can publish match summaries and achievements as
+Livefire can publish match summaries and achievements as
 `com.openfire.matchEvent` records in a consenting player's repository.
 Publishing is disabled by default. To enable it on a node, configure
 `publishEvents.enabled`, set a reverse-domain `gameId`, and enable the

@@ -31,7 +31,7 @@ import { fileURLToPath } from 'node:url';
 import { createHmac, randomBytes } from 'node:crypto';
 import path from 'node:path';
 
-import { Openfire } from '../src/index.ts';
+import { Livefire, Openfire } from '../src/index.ts';
 import type { Room, RoomEvent } from '../src/index.ts';
 import {
   deviceAccount,
@@ -387,7 +387,8 @@ test('join, chat, command, snapshot and resume against the real server', async (
   const server = await startServer();
   try {
     // ---- Join: handshake + welcome + initial snapshot ----------------
-    const sam = await Openfire.join({
+    assert.equal(Openfire, Livefire);
+    const sam = await Livefire.join({
       host: `http://127.0.0.1:${PORT}`,
       roomKey: 'demo-room',
       name: 'Sam',

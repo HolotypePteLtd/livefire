@@ -1,4 +1,4 @@
-# Guest identity PDS for Openfire.
+# Guest identity PDS for Livefire.
 #
 # Runs the reference atproto PDS (ghcr.io/bluesky-social/pds) so games can
 # create zero-signup guest accounts (the rooms-node /ident/* routes create

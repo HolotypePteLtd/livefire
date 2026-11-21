@@ -1,6 +1,6 @@
 # rooms_atproto
 
-AT Protocol identity for Openfire, extracted from an existing game accounts
+AT Protocol identity for Livefire, extracted from an existing game accounts
 stack. The public package omits room and repository
 concern. (The directory keeps the `packages/atproto_identity` path; the pub
 package name is `rooms_atproto` because `atproto_identity` names the Bluesky

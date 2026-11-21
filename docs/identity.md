@@ -1,6 +1,6 @@
 # Identity: Guests, Device Accounts & AT Protocol
 
-Openfire supports three composable identity tiers. Start with zero-friction guests, add recoverable device accounts, or turn on Bluesky / AT Protocol sign-in — all using the same room protocol.
+Livefire supports three composable identity tiers. Start with zero-friction guests, add recoverable device accounts, or turn on Bluesky / AT Protocol sign-in — all using the same room protocol.
 
 ---
 
@@ -16,10 +16,10 @@ Openfire supports three composable identity tiers. Start with zero-friction gues
 
 ## AT Protocol sign-in (`/auth/*`)
 
-The Openfire node acts as a confidential OAuth client (`private_key_jwt` with ES256 + PKCE + DPoP). Completion uses **polling** (`/auth/result?flow=…`) so the exact same flow works on web popups and desktop browsers.
+The Livefire node acts as a confidential OAuth client (`private_key_jwt` with ES256 + PKCE + DPoP). Completion uses **polling** (`/auth/result?flow=…`) so the exact same flow works on web popups and desktop browsers.
 
 ```text
-  Client / Game                     Openfire Node                         AT Protocol (PDS / AS)
+  Client / Game                     Livefire Node                         AT Protocol (PDS / AS)
   ─────────────                     ─────────────                         ──────────────────────
         │ 1. GET /auth/start              │                                          │
         │    ?handle&room[&creator=true   │── resolveHandle → DID doc → PDS ────────►│
@@ -107,7 +107,7 @@ For games that want persistent player IDs with **zero signup screen**:
 
 - The node creates accounts on your stock AT Protocol PDS via `com.atproto.server.createInviteCode` (Basic auth `admin:<serviceKey>`) + `com.atproto.server.createAccount`.
 - Recovery public keys (`recovery_keys`) and generated guest credentials (`guest_credentials`) persist in both SQLite and Supabase Postgres modes (`supabase/migrations/0002` & `0003`).
-- In TypeScript, use `Openfire.deviceAccount.create()` / `Openfire.deviceAccount.recover()` from `sdk/typescript/src/identity.ts` (includes encrypted IndexedDB keystore).
+- In TypeScript, use `Livefire.deviceAccount.create()` / `Livefire.deviceAccount.recover()` from `sdk/typescript/src/identity.ts` (includes encrypted IndexedDB keystore).
 
 > **Trust note:** Recovery keys are **app-level**. The node operator holds the PDS-level rotation key and generated guest app password, so v1 guarantees recovery from client session loss — not protection against a malicious node operator.
 

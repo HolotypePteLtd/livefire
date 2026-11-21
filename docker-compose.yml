@@ -7,12 +7,12 @@ services:
     volumes:
       # Node config (see deploy/node.example.json). The publicBaseUrl must
       # match DOMAIN below.
-      - ./node.json:/etc/rooms/node.json:ro
-      # AT Protocol OAuth client key (auth.providers: [.., atproto]).
-      # Generate once: cd packages/node &&
-      #   dart run tool/gen_client_jwks.dart ./oauth-client-jwks.json
-      # Omit this mount when the atproto provider is disabled.
-      - ./oauth-client-jwks.json:/etc/rooms/oauth-client-jwks.json:ro
+      - type: bind
+        source: ./node.json
+        target: /etc/rooms/node.json
+        read_only: true
+        bind:
+          create_host_path: false
       - rooms-data:/var/lib/rooms
     expose:
       - "8787"
@@ -39,7 +39,6 @@ services:
       - "443:443/udp" # HTTP/3
     environment:
       DOMAIN: ${DOMAIN:?set DOMAIN=rooms.example.com in .env}
-      # ACME_EMAIL: you@example.com # optional, recommended
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       # Static site published by the init container above.
